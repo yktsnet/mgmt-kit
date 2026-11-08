@@ -66,7 +66,7 @@ cp mgmt-kit/ladder/docs/{ladder,scoring,hiring,adapt}.md ~/repos/target/docs/
 cp -r mgmt-kit/ladder/.claude/skills/ladder-score ~/repos/target/.claude/skills/
 ```
 
-出るのは5軸の点と次に上げる1軸である。**採点結果は既定でファイルに書かない**ので、
+採点結果は、5軸の点・段階・次に上げる1軸である。**採点結果は既定でファイルに書かない**ので、
 置き場と実名の扱いは、残すと決めた側が先に決める。
 
 ## usage：Claude Code の利用状況

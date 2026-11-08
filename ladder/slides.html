@@ -130,7 +130,7 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
     <div class="uses">
       <div class="use"><div class="n">評価<span>いまどこにいるか</span></div>
         <dl><dt>材料</dt><dd>リポジトリの成果物と、型を回した記録</dd>
-            <dt>結果</dt><dd>5軸それぞれの段階。証拠が無い軸は「未観測」</dd></dl></div>
+            <dt>結果</dt><dd>5軸それぞれの点と、A と B の低いほうで決める段階。証拠が無い軸は「未観測」</dd></dl></div>
       <div class="use"><div class="n">育成<span>次に何を伸ばすか</span></div>
         <dl><dt>材料</dt><dd>評価で付いた5軸の段階</dd>
             <dt>結果</dt><dd>最も低い1軸と、それに対応する手順。回した成果物が次の評価の材料になる</dd></dl></div>
@@ -184,7 +184,7 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
         <tr><td><span class="lv out">L1</span></td><td>標準化の外。単位作業を指示され、成果物はレビューで書き直される</td></tr>
         <tr><td><span class="lv">L2</span></td><td>標準化されたワークフローを理解し、単位作業をレビュー前提でやり切る</td></tr>
         <tr><td><span class="lv">L3</span></td><td>担当領域を自走する</td></tr>
-        <tr><td><span class="lv">L4</span></td><td>案件の一領域を依頼元との接点ごと持ち、進捗と品質を自分で管理する</td></tr>
+        <tr><td><span class="lv">L4</span></td><td>案件の一領域を依頼元との接点ごと持ち、課題と進捗を自分で管理する</td></tr>
         <tr><td><span class="lv">L5</span></td><td>案件全体の設計・推進を担い、依頼元の課題設定に関与する。得た型を他の案件へ渡す</td></tr>
       </tbody>
     </table>
@@ -195,7 +195,7 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
       <div class="callout"><div class="t">L2 は型を理解すれば届く</div>判定文は型が実際に強制するものだけで書いてある。理解した人が届かないなら、<b>直すのは人ではなく判定文か型の側</b>である。</div>
       <div class="callout"><div class="t">L5 の行は到達点</div>5本がすべて真になる人を探すためではなく、<b>どの軸がどれだけ足りないか</b>を言うために使う。</div>
     </div>
-    <div class="note">※ 報酬帯との対応は持たない。段階と報酬の結び付け方は各社で違い、評価基準の側に固定すると持ち込めなくなる。</div>
+    <div class="note">※ 1人の段階は A と B の低いほうで決める。依頼元に対して任せられる部分を A、チームの型の中で任せられる部分を B が測る。<br>※ 報酬帯との対応は持たない。段階と報酬の結び付け方は各社で違い、評価基準の側に固定すると持ち込めなくなる。</div>
   </div>
 </section>
 
@@ -213,8 +213,8 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
           <tr><td><span class="lv out">L1</span></td><td>渡された要件にそのまま着手する。曖昧さは実装が止まる形で表面化する<div class="src">着手後に要件を問い直した回数</div></td></tr>
           <tr><td><span class="lv">L2</span></td><td>着手前に出口と順序を書ける。完了条件が書けないことで、要件の曖昧さが着手前に自分に見える<div class="src"><code>PLAN.md</code> の出口の節</div></td></tr>
           <tr><td><span class="lv">L3</span></td><td>性能・運用・移行の欠落を要件に対して指摘できる。設計を非開発者に読める資料にでき、課題を先出しして進捗を自分で管理する<div class="src">設計資料、Issue や PR の課題提起</div></td></tr>
-          <tr><td><span class="lv">L4</span></td><td>依頼元への提案資料と見積の根拠を自分で組める。社内の非開発者と要件を共有し、案件全体の課題管理と期待値調整ができる<div class="src">提案資料、見積の内訳</div></td></tr>
-          <tr><td><span class="lv">L5</span></td><td>依頼元の課題設定に関与し、提示された要件を組み替えて提案できる。複数案件にまたがる関係を作れる<div class="src">提案の採否と、要件が組み替わった記録</div></td></tr>
+          <tr><td><span class="lv">L4</span></td><td>持った領域について、依頼元への提案資料と見積の根拠を自分で組める。社内の非開発者と要件を共有し、領域の課題管理と期待値調整ができる<div class="src">提案資料、見積の内訳</div></td></tr>
+          <tr><td><span class="lv">L5</span></td><td>案件全体の課題管理と期待値調整を担う。依頼元の課題設定に関与し、提示された要件を組み替えて提案できる。複数案件にまたがる関係を作れる<div class="src">提案の採否と、要件が組み替わった記録</div></td></tr>
         </tbody>
       </table>
       <table class="eq" style="flex:1">
@@ -289,6 +289,7 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
             <li><b>軸ごとに L2 から順に真偽を見る。</b>偽になった手前がその軸の点になる</li>
             <li><b>証拠が無い軸は「未観測」として残す。</b>点で埋めない。育成では機会を配れば分かる軸、選考では面接で聞く軸を指す</li>
             <li><b>5軸の平均を取らない。</b>凸凹が消え、次に何をするかが分からなくなる</li>
+            <li><b>段階は A と B の低いほうで決める。</b>C・D・E は段階に入れない</li>
           </ul>
         </div>
       </div>
@@ -323,12 +324,12 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
           <td>指示された手順を回して標準の形の成果物を出す。入ってから日が浅く、担当機能の前後の業務は答えられない。</td>
           <td>単位作業を、完了条件だけ渡してレビュー前提で</td></tr>
         <tr><td><span class="lv">L3</span></td>
-          <td class="num">2</td><td class="num">3</td><td class="num">2</td><td class="num">3</td><td class="num">2</td>
-          <td>中途で入って半年。回す手順を自分で選び、テストの欠落を指摘する。要件そのものへの指摘はまだ出ない。</td>
+          <td class="num">3</td><td class="num">3</td><td class="num">2</td><td class="num">3</td><td class="num">2</td>
+          <td>中途で入って半年。回す手順を自分で選び、要件の欠落とテストの欠落を指摘する。提案資料や見積はまだ組まない。</td>
           <td>担当領域。進め方を渡さず、結果だけ見る</td></tr>
         <tr><td><span class="lv">L4</span></td>
           <td class="num">4</td><td class="num">4</td><td class="num">4</td><td class="num">3</td><td class="num">3</td>
-          <td>業務側に長く入り、依頼元と開発者が同じ言葉で話せる状態を作る。案件全体のリリース判定までは持たない。</td>
+          <td>業務側に長く入り、依頼元と開発者が同じ言葉で話せる状態を作る。案件全体のリリース判定までは担わない。</td>
           <td>案件の一領域を、依頼元との接点ごと</td></tr>
         <tr><td><span class="lv">L5</span></td>
           <td class="num">5</td><td class="num">5</td><td class="num">4</td><td class="num">5</td><td class="num">4</td>
@@ -338,8 +339,8 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
     </table>
   </div>
   <div class="foot"><div class="callout">
-    <div class="t">この5人から分かること</div>
-    代表段階は5人とも<b>A と B の高いほう</b>に一致する。最も低い軸を取る規則にすると L1 以外の全員が下がる。最も低い軸を取るのは、次に上げる1軸を決めるときだけである。<b>C は段階に連動しない</b>（L1 が3、L2 が1、L3 が2）。型に乗れるかと依頼元の業務を知っているかは互いに独立で、在籍の長さが関わるのは C の側だけである。
+    <div class="t">この5人を設定した理由</div>
+    <b>段階は、A と B の低いほうに一致させた。</b>規則を当てたとき、迷わず1つの段階に決まる例にするためである。<b>C は段階の順に並べなかった</b>（L1 が3、L2 が1、L3 が2）。在籍の長さが C にだけ関わることを示すためである。<b>L4 の D と E は3にした。</b>段階が同じでも、向く案件がこの2軸で変わることを示すためである。
   </div></div>
 </section>
 
