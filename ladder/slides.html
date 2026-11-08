@@ -110,7 +110,7 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
 <section class="page cover">
   <div class="org">評価制度の例</div>
   <h1>エンジニアの評価基準<br>5軸 × 5段階</h1>
-  <div class="lead">採用・育成・評価を、1つの基準で回す</div>
+  <div class="lead">採用・育成・評価に、1つの基準を使う</div>
   <hr>
   <ul class="ask">
     <li><b>何を測るか</b>　上流・型の運用・ドメイン・検証・基盤の5軸</li>
@@ -123,20 +123,20 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
 <!-- 2 3つの用途 -->
 <section class="page">
   <div class="head">
-    <h1>評価・育成・採用を、同じ5軸で回す</h1>
-    <div class="sub">3つを別々の制度にしない。軸と段階は共通で、読む材料だけが替わる</div>
+    <h1>評価・育成・採用に、同じ5軸を使う</h1>
+    <div class="sub">3つを別々の制度にしない。軸と段階は共通で、材料だけが替わる</div>
   </div>
   <div class="body" style="justify-content:center">
     <div class="uses">
       <div class="use"><div class="n">評価<span>いまどこにいるか</span></div>
-        <dl><dt>読むもの</dt><dd>リポジトリの成果物と、型を回した記録</dd>
-            <dt>出るもの</dt><dd>5軸それぞれの段階。証拠が無い軸は「未観測」</dd></dl></div>
+        <dl><dt>材料</dt><dd>リポジトリの成果物と、型を回した記録</dd>
+            <dt>結果</dt><dd>5軸それぞれの段階。証拠が無い軸は「未観測」</dd></dl></div>
       <div class="use"><div class="n">育成<span>次に何を伸ばすか</span></div>
-        <dl><dt>読むもの</dt><dd>評価で出た5軸の段階</dd>
-            <dt>出るもの</dt><dd>最も低い1軸と、それに対応する手順。回した成果物が次の評価の材料になる</dd></dl></div>
+        <dl><dt>材料</dt><dd>評価で付いた5軸の段階</dd>
+            <dt>結果</dt><dd>最も低い1軸と、それに対応する手順。回した成果物が次の評価の材料になる</dd></dl></div>
       <div class="use"><div class="n">採用<span>誰を取るか</span></div>
-        <dl><dt>読むもの</dt><dd>面接と課題。前職の成果物は持ち込ませない</dd>
-            <dt>出るもの</dt><dd>在籍者と同じ5軸の段階。B は入社前に測れないので見込みで置き、入社後に採点し直す</dd></dl></div>
+        <dl><dt>材料</dt><dd>面接と課題。前職の成果物は持ち込ませない</dd>
+            <dt>結果</dt><dd>在籍者と同じ5軸の段階。B は入社前に測れないので見込みで置き、入社後に採点し直す</dd></dl></div>
     </div>
   </div>
   <div class="foot"><div class="callout">
@@ -191,9 +191,9 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
   </div>
   <div class="foot">
     <div class="co3">
-      <div class="callout"><div class="t">L1 は標準化の外に置く</div>型を渡しても回せず、個人の書き方で成果物を出す状態。<b>型を渡して回させれば L2 へ上がれる</b>ので、育成の下端が定義から読める。</div>
+      <div class="callout"><div class="t">L1 は標準化の外に置く</div>型を渡しても回せず、個人の書き方で成果物を出す状態。<b>型を渡して回させれば L2 へ上がれる</b>ので、育成の出発点が定義で決まる。</div>
       <div class="callout"><div class="t">L2 は型を理解すれば届く</div>判定文は型が実際に強制するものだけで書いてある。理解した人が届かないなら、<b>直すのは人ではなく判定文か型の側</b>である。</div>
-      <div class="callout"><div class="t">L5 の行は到達像</div>5本がすべて真になる人を探すためではなく、<b>どの軸がどれだけ足りないか</b>を言うために読む。</div>
+      <div class="callout"><div class="t">L5 の行は到達像</div>5本がすべて真になる人を探すためではなく、<b>どの軸がどれだけ足りないか</b>を言うために使う。</div>
     </div>
     <div class="note">※ 報酬帯との対応は持たない。段階と報酬の結び付け方は各社で違い、評価基準の側に固定すると持ち込めなくなる。</div>
   </div>
@@ -224,7 +224,7 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
           <tr><td><span class="lv">L2</span></td><td>指示された手順を回し、標準の形の成果物を出せる。変更1本ごとに区切り、コミットで止まって承認を待てる<div class="src">PR の粒度、承認の残り方、配られたスキルの使用回数</div></td></tr>
           <tr><td><span class="lv">L3</span></td><td>作業に対して回す手順を自分で選べる。他の作業者の成果物を読んで自分の進め方を直せる。型が噛み合わない作業を見分けて手で進める<div class="src">手順を外した作業と、その理由の記録</div></td></tr>
           <tr><td><span class="lv">L4</span></td><td>既存の型の欠落を特定して直せる。無い手順を作る要否を判断し、要ると見れば自分で作ってチームに使わせる<div class="src">手順の置き場への変更と、自作のスキルが他のメンバーに使われた回数</div></td></tr>
-          <tr><td><span class="lv">L5</span></td><td>案件横断で型の構成を設計し、他人が回せる形に配布できる。詰まりの型を見つけて仕組みの側へ反映できる<div class="src">他案件への配布と、配布後の定着</div></td></tr>
+          <tr><td><span class="lv">L5</span></td><td>案件横断で型の構成を設計し、他人が回せる形に配布できる。繰り返し起きる詰まりを見つけて型に反映できる<div class="src">他案件への配布と、配布後の定着</div></td></tr>
         </tbody>
       </table>
     </div>
@@ -267,7 +267,7 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
 <section class="page">
   <div class="head">
     <h1>判定文（3/3）　E インフラ・基盤／採点の原則</h1>
-    <div class="sub">採点は能力で読み、5軸を平均しない</div>
+    <div class="sub">採点は能力で判定し、5軸を平均しない</div>
   </div>
   <div class="body">
     <div style="display:flex;gap:6mm;flex:1">
@@ -282,13 +282,13 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
         </tbody>
       </table>
       <div class="card" style="flex:1">
-        <div class="t"><span class="a">採点の原則</span><span class="b">能力で読み、実績で読まない</span></div>
+        <div class="t"><span class="a">採点の原則</span><span class="b">能力で判定し、実績では判定しない</span></div>
         <div class="c">
-          判定文を成果物の事実で読むと、測っているのは<b>やってきたこと</b>になる。組めるが組む仕事をしなかった人は、E が実力より下に出る。
+          判定文を成果物の事実だけで当てると、測っているのは<b>やってきたこと</b>になる。組めるが組む仕事をしなかった人は、E が実力より低く付く。
           <ul style="margin-top:2.6mm">
             <li><b>軸ごとに L2 から順に真偽を見る。</b>偽になった手前がその軸の点になる</li>
             <li><b>証拠が無い軸は「未観測」として残す。</b>点で埋めない。育成では機会を配れば分かる軸、選考では面接で聞く軸を指す</li>
-            <li><b>5軸の平均を取らない。</b>凸凹が消え、次に何をするかが出なくなる</li>
+            <li><b>5軸の平均を取らない。</b>凸凹が消え、次に何をするかが分からなくなる</li>
           </ul>
         </div>
       </div>
@@ -316,7 +316,7 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
       <tbody>
         <tr><td><span class="lv out">L1</span></td>
           <td class="num">1</td><td class="num">1</td><td class="num hi">3</td><td class="num">1</td><td class="num">1</td>
-          <td>型を渡しても回らず、自分の書き方で書き始める。同じ依頼元を長く見てきたので、C だけが2段上に出ている。</td>
+          <td>型を渡しても回らず、自分の書き方で書き始める。同じ依頼元を長く見てきたので、C だけが2段高い。</td>
           <td>単位作業。着手前にこちらで手順を割ってから渡す</td></tr>
         <tr><td><span class="lv">L2</span></td>
           <td class="num">2</td><td class="num">2</td><td class="num">1</td><td class="num">2</td><td class="num">1</td>
@@ -338,16 +338,16 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
     </table>
   </div>
   <div class="foot"><div class="callout">
-    <div class="t">この5人から読めること</div>
-    代表段階は5人とも<b>A と B の高いほう</b>に一致する。最も低い軸を取る規則にすると L1 以外の全員が下がる。最も低い軸を取るのは、次に上げる1軸を出すときだけである。<b>C は段階に連動しない</b>（L1 が3、L2 が1、L3 が2）。型に乗れるかと依頼元の業務を知っているかは互いに独立で、在籍の長さが効くのは C の側だけである。
+    <div class="t">この5人から分かること</div>
+    代表段階は5人とも<b>A と B の高いほう</b>に一致する。最も低い軸を取る規則にすると L1 以外の全員が下がる。最も低い軸を取るのは、次に上げる1軸を決めるときだけである。<b>C は段階に連動しない</b>（L1 が3、L2 が1、L3 が2）。型に乗れるかと依頼元の業務を知っているかは互いに独立で、在籍の長さが効くのは C の側だけである。
   </div></div>
 </section>
 
 <!-- 10 型と道具 -->
 <section class="page">
   <div class="head">
-    <h1>型を配り、成果物と記録を読む</h1>
-    <div class="sub">評価・育成・採用が同じ源を読む</div>
+    <h1>型を配り、成果物と記録で判定する</h1>
+    <div class="sub">評価・育成・採用が同じ成果物と記録を材料にする</div>
   </div>
   <div class="body" style="justify-content:center">
     <div class="flow" style="margin-bottom:8mm">
@@ -358,16 +358,16 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
     </div>
     <div class="cards">
       <div class="card"><div class="t"><span class="a">型を配る</span><span class="b">標準化された手順</span></div>
-        <div class="c">手順をチームで回すと、成果物の形が揃う。判定文が読みに行く置き場は、この型が作る。</div></div>
+        <div class="c">手順をチームで回すと、成果物の形が揃う。判定文が根拠にする成果物の置き場は、この型が作る。</div></div>
       <div class="card"><div class="t"><span class="a">成果物を読む</span><span class="b">1人がどの段階にいるか</span></div>
-        <div class="c">リポジトリの成果物に判定文を当て、5軸の点と次に上げる1軸を出す。</div></div>
+        <div class="c">リポジトリの成果物に判定文を当て、5軸の点と次に上げる1軸を決める。</div></div>
       <div class="card"><div class="t"><span class="a">利用データを読む</span><span class="b">型を十分に回しているか</span></div>
         <div class="c">エージェントの利用データから、配られたスキルの使用回数・作業の量・投入の量を見る。B 軸の材料になる。在籍者にだけ当てる。</div></div>
     </div>
   </div>
   <div class="foot"><div class="callout">
     <div class="t">自社へ持ち込むときに差し替えるもの</div>
-    <b>判定文の置き場</b>は、使っている型の同じ役割の置き場へ読み替える。置き場が無い役割は判定文ごと落とす。<b>A と C</b> は依頼元が別会社である前提で書いてあるので、自社サービスなら社内の企画・事業側と読み替える。<b>L4・L5</b> の「案件」は、プロダクト・チーム・組織へ読み替えてよい。段階の本体は任せられる範囲の広さである。
+    <b>判定文の置き場</b>は、使っている型の同じ役割の置き場へ読み替える。置き場が無い役割は判定文ごと落とす。<b>A と C</b> は依頼元が別会社である前提で書いてあるので、自社サービスなら社内の企画・事業側と読み替える。<b>L4・L5</b> の「案件」は、プロダクト・チーム・組織へ読み替えてよい。段階が表すのは任せられる範囲の広さである。
   </div></div>
 </section>
 </body></html>
