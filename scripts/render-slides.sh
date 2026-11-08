@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
-# slides.html を PDF に印刷し、ページごとの PNG に書き出す。
+# <dir>/slides.html を PDF に印刷し、<dir>/slides/ へページごとの PNG に書き出す。
 # 要るもの: chromium、pdftoppm（poppler）、Noto Sans CJK JP
 set -euo pipefail
 
-cd "$(dirname "$0")"
+if [ $# -ne 1 ] || [ ! -f "$1/slides.html" ]; then
+  echo "Usage: $0 <dir containing slides.html>" >&2
+  exit 1
+fi
+
+cd "$1"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
@@ -19,4 +24,4 @@ for f in slides/-*.png; do
   mv "$f" "slides/$(printf '%02d' "$((10#${n%.png}))").png"
 done
 
-echo "Wrote $(ls slides | wc -l) slides to training/slides/"
+echo "Wrote $(ls slides | wc -l) slides to $1/slides/"
