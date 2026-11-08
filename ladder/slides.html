@@ -8,14 +8,16 @@
   --navy:#1B2A5E; --navy2:#2A3B75; --teal:#1C6E8C; --gold:#B8860B;
   --grey:#6B7280; --light:#EEF2F8; --row:#F5F7FB; --bordr:#D5DAE5; --crim:#9B2C2C;
 }
+/* ブラウザ既定では背景色を印刷しない。印刷ダイアログ側の指定と併せて要る */
 html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 body{
-  font-family:"Noto Sans CJK JP","Noto Sans JP",sans-serif;
+  font-family:"Noto Sans CJK JP","Noto Sans JP","Yu Gothic UI","Hiragino Sans","Meiryo",sans-serif;
   color:#1A1A1A; background:#8A8F98;
 }
 .page{
   width:297mm; height:210mm; padding:15mm 17mm 12mm; background:#fff;
-  display:flex; flex-direction:column; page-break-after:always; overflow:hidden;
+  display:flex; flex-direction:column; page-break-after:always; overflow:hidden; position:relative;
+  counter-increment:pg;
 }
 .page:last-child{ page-break-after:auto; }
 @media screen{
@@ -23,8 +25,14 @@ body{
   .page{ margin:0 auto 18px; box-shadow:0 2px 14px rgba(0,0,0,.35); }
 }
 h1{ font-size:25pt; font-weight:700; color:var(--navy); letter-spacing:.01em; }
-.sub{ font-size:12pt; color:var(--grey); margin-top:3mm; }
-.head{ margin-bottom:6mm; }
+.sub{ font-size:12.5pt; color:#374151; margin-top:2.5mm; line-height:1.7; }
+.sec{ font-size:10.5pt; font-weight:700; color:var(--teal); letter-spacing:.05em; margin-bottom:1.5mm; }
+/* 番号を手で振らず、表紙を除いた通し番号を CSS で付ける */
+body{ counter-reset:pg; }
+.page:not(.cover)::after{ content:counter(pg); position:absolute; right:17mm; bottom:7mm;
+  font-size:9pt; color:var(--grey); }
+.head{ margin-bottom:5mm; }
+table.tight tbody td{ padding-top:2.2mm; padding-bottom:2.2mm; }
 .body{ flex:1; display:flex; flex-direction:column; }
 .foot{ margin-top:auto; padding-top:5mm; }
 
@@ -123,6 +131,7 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
 <!-- 2 3つの用途 -->
 <section class="page">
   <div class="head">
+    <div class="sec">全体</div>
     <h1>評価・育成・採用に、同じ5軸を使う</h1>
     <div class="sub">3つを別々の制度にしない。軸と段階は共通で、材料だけが替わる</div>
   </div>
@@ -148,8 +157,9 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
 <!-- 3 5軸 -->
 <section class="page">
   <div class="head">
-    <h1>評価の軸：5軸</h1>
-    <div class="sub">態度ではなく、成果物で確かめられるものだけを軸にする</div>
+    <div class="sec">評価の軸</div>
+    <h1>成果物で確かめられるものだけを5つの軸にする</h1>
+    <div class="sub">上流・型の運用・ドメイン・検証・基盤。態度は軸にしない</div>
   </div>
   <div class="body">
     <table style="flex:1">
@@ -174,8 +184,9 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
 <!-- 4 段階 -->
 <section class="page">
   <div class="head">
-    <h1>段階：L1〜L5</h1>
-    <div class="sub">尺度は「依頼元に対して、どこまで一人で任せられるか」</div>
+    <div class="sec">段階</div>
+    <h1>依頼元に対して、どこまで一人で任せられるかで段階を区切る</h1>
+    <div class="sub">1人の段階は A と B の低いほうで決める。依頼元に対して任せられる部分を A、チームの型の中で任せられる部分を B が測る</div>
   </div>
   <div class="body">
     <table style="flex:1">
@@ -195,14 +206,15 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
       <div class="callout"><div class="t">L2 は型を理解すれば届く</div>判定文は型が実際に強制するものだけで書いてある。理解した人が届かないなら、<b>直すのは人ではなく判定文か型の側</b>である。</div>
       <div class="callout"><div class="t">L5 の行は到達点</div>5本がすべて真になる人を探すためではなく、<b>どの軸がどれだけ足りないか</b>を言うために使う。</div>
     </div>
-    <div class="note">※ 1人の段階は A と B の低いほうで決める。依頼元に対して任せられる部分を A、チームの型の中で任せられる部分を B が測る。<br>※ 報酬帯との対応は持たない。段階と報酬の結び付け方は各社で違い、評価基準の側に固定すると持ち込めなくなる。</div>
+    <div class="note">※ 報酬帯との対応は持たない。段階と報酬の結び付け方は各社で違い、評価基準の側に固定すると持ち込めなくなる。</div>
   </div>
 </section>
 
 <!-- 5 判定文 A・B -->
 <section class="page">
   <div class="head">
-    <h1>判定文（1/3）　A 上流・提案と関係者調整／B 型の運用</h1>
+    <div class="sec">判定文（1/3）</div>
+    <h1>A 上流・提案と関係者調整／B 型の運用</h1>
     <div class="sub">評価者の解釈に委ねる語を使わず、リポジトリの何を開けば真偽が確かめられるかで書く</div>
   </div>
   <div class="body">
@@ -234,7 +246,8 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
 <!-- 6 判定文 C・D -->
 <section class="page">
   <div class="head">
-    <h1>判定文（2/3）　C ドメイン理解／D 検証・品質保証</h1>
+    <div class="sec">判定文（2/3）</div>
+    <h1>C ドメイン理解／D 検証・品質保証</h1>
     <div class="sub">C は在籍の長さで上がり、段階に連動しない</div>
   </div>
   <div class="body">
@@ -266,8 +279,8 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
 <!-- 7 判定文 E と採点の原則 -->
 <section class="page">
   <div class="head">
-    <h1>判定文（3/3）　E インフラ・基盤／採点の原則</h1>
-    <div class="sub">採点は能力で判定し、5軸を平均しない</div>
+    <div class="sec">判定文（3/3）</div>
+    <h1>E インフラ・基盤／採点の原則</h1>
   </div>
   <div class="body">
     <div style="display:flex;gap:6mm;flex:1">
@@ -289,7 +302,7 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
             <li><b>軸ごとに L2 から順に真偽を見る。</b>偽になった手前がその軸の点になる</li>
             <li><b>証拠が無い軸は「未観測」として残す。</b>点で埋めない。育成では機会を配れば分かる軸、選考では面接で聞く軸を指す</li>
             <li><b>5軸の平均を取らない。</b>凸凹が消え、次に何をするかが分からなくなる</li>
-            <li><b>段階は A と B の低いほうで決める。</b>C・D・E は段階に入れない</li>
+            <li><b>段階は A と B の低いほうで決める。</b></li>
           </ul>
         </div>
       </div>
@@ -304,11 +317,12 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
 <!-- 8 ペルソナ -->
 <section class="page">
   <div class="head">
-    <h1>各段階の参照ペルソナ</h1>
-    <div class="sub">実在の人物を当てず、評価基準の側で固定した架空の人物。実在の人は軸ごとに凸凹するので、全軸が揃った人物は置いていない</div>
+    <div class="sec">参照ペルソナ</div>
+    <h1>各段階に1人ずつ架空の人物を置く</h1>
+    <div class="sub">実在の人物を当てず、評価基準の側で固定する。実在の人は軸ごとに凸凹するので、全軸が揃った人物は置いていない</div>
   </div>
   <div class="body">
-    <table style="flex:1">
+    <table class="tight" style="flex:1">
       <thead><tr>
         <th style="width:14mm">Lv</th>
         <th class="num" style="width:7mm">A</th><th class="num" style="width:7mm">B</th><th class="num" style="width:7mm">C</th><th class="num" style="width:7mm">D</th><th class="num" style="width:7mm">E</th>
@@ -347,6 +361,7 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
 <!-- 10 型と道具 -->
 <section class="page">
   <div class="head">
+    <div class="sec">運用</div>
     <h1>型を配り、成果物と記録で判定する</h1>
     <div class="sub">評価・育成・採用が同じ成果物と記録を材料にする</div>
   </div>
