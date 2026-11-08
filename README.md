@@ -45,6 +45,8 @@ usage は GitHub で Issue と PR を中心に仕事を進め、Claude Code を�
 | [ladder/docs/adapt.md](ladder/docs/adapt.md) | 自社へ持ち込むときの差し替え方 |
 | [ladder/docs/ref/sources.md](ladder/docs/ref/sources.md) | 下敷きにした公開ラダーとライセンス |
 
+評価基準の全体を図でつかむためのスライドを [ladder/README.md](ladder/README.md) に置いている。
+
 ### 軸が先に来る
 
 標準化を先にやると、揃えるものが「書式」で止まる。何を測るかを決めてから型を配ると、
