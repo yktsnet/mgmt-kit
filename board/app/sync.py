@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 
 from .definition import parse_definition, store_definition
 from .people import parse_people, store_people
+from .review import parse_review, store_review
 from .parse import SheetError, parse_candidate, parse_requisitions
 from .sources import FileRef, Source
 
@@ -15,7 +16,8 @@ REQUISITIONS = "settings/requisitions"
 CANDIDATES = "candidates/"
 DEFINITION = "settings/definition"
 PEOPLE = "settings/people"
-KINDS = ("candidate", "requisitions", "definition", "people")
+REVIEWS = "reviews/"
+KINDS = ("candidate", "requisitions", "definition", "people", "review")
 
 
 @dataclass
@@ -32,6 +34,9 @@ def kind_of(ref: FileRef) -> str | None:
         return "definition"
     if ref.path == PEOPLE:
         return "people"
+    # reviews/<期>/<名前>
+    if ref.path.startswith(REVIEWS) and ref.path.count("/") == 2:
+        return "review"
     if ref.path.startswith(CANDIDATES):
         return "candidate"
     return None
@@ -94,6 +99,7 @@ def _clear(db: sqlite3.Connection, file_id: str) -> None:
     db.execute("DELETE FROM requisitions WHERE file_id = ?", (file_id,))
     db.execute("DELETE FROM definition_items WHERE file_id = ?", (file_id,))
     db.execute("DELETE FROM people WHERE file_id = ?", (file_id,))
+    db.execute("DELETE FROM reviews WHERE file_id = ?", (file_id,))
 
 
 def _store(db: sqlite3.Connection, ref: FileRef, kind: str | None, book) -> None:
@@ -123,6 +129,8 @@ def _store(db: sqlite3.Connection, ref: FileRef, kind: str | None, book) -> None
             "INSERT INTO scores (email, origin, axis, value) VALUES (?, 'interview', ?, ?)",
             [(c.email, a, v) for a, v in c.scores().items()],
         )
+    elif kind == "review":
+        store_review(db, ref.id, parse_review(book))
     elif kind == "people":
         store_people(db, ref.id, parse_people(book))
     elif kind == "definition":
