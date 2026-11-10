@@ -38,8 +38,10 @@ def test_home_goes_to_settings(client):
 def test_settings_shows_definition_assignments_and_requisitions(client):
     html = client.get("/settings").text
     assert "性能・運用・移行の欠落を要件に対して指摘できる。" in html
-    assert "未割り当て" in html and "Alice Walker" in html
+    assert "Unassigned" in html and "Alice Walker" in html
     assert "リード" in html
+    # 読む表示と編集の部品は、区画の Edit で切り替える
+    assert 'data-action="edit"' in html and 'class="btn link add edit-only"' in html
 
 
 def test_new_version_is_shown_and_old_one_is_reachable(client):

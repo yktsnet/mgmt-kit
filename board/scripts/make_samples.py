@@ -123,7 +123,7 @@ def candidate_book(profile: dict | None = None, interviews: list | None = None) 
     return wb
 
 
-DEF_HEADER = ["軸", "段階", "細目", "判定文", "読むもの"]
+DEF_HEADER = ["軸", "段階", "細目", "判定文", "Evidence"]
 
 
 def definition_book() -> Workbook:

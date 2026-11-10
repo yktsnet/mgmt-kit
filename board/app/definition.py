@@ -11,7 +11,7 @@ from .parse import AXES, SheetError, _table, _text
 from .sources import Book
 
 LEVELS = (1, 2, 3, 4, 5)
-DEFINITION_HEADER = ["軸", "段階", "細目", "判定文", "読むもの"]
+DEFINITION_HEADER = ["軸", "段階", "細目", "判定文", "Evidence"]
 VERSION = re.compile(r"v(\d+)")
 
 
@@ -57,7 +57,8 @@ def _version(title: str, rows: list) -> list[Item]:
             raise SheetError(f"{where}: 段階 must be L1-L5, got {r.get('段階')!r}")
         if not re.fullmatch(r"[a-z]", key):
             raise SheetError(f"{where}: 細目 must be one letter a-z, got {key!r}")
-        item = Item(axis, int(level_text), key, text, _text(r.get("読むもの")))
+        # 見出しを Evidence に変える前に作ったシートも読む
+        item = Item(axis, int(level_text), key, text, _text(r.get("Evidence", r.get("読むもの"))))
         if item.id in seen:
             raise SheetError(f"{where}: duplicate {item.id}")
         seen.add(item.id)

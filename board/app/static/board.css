@@ -50,6 +50,9 @@ button, select, input, textarea { font: inherit; color: inherit; }
 /* 表 */
 .scroll { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
+/* 列の少ない表は中身の幅に合わせる。区画いっぱいに広げると列の間が空きすぎる */
+table.fit { width: auto; min-width: 0; }
+table.fit td, table.fit th { padding-right: 28px; }
 th, td { padding: 8px 14px; text-align: left; vertical-align: middle; }
 thead th { font-size: 12px; font-weight: 700; color: var(--navy); background: var(--head); border-bottom: 1px solid var(--line); white-space: nowrap; }
 tbody td { border-top: 1px solid var(--line); }
@@ -90,15 +93,23 @@ table.grid .lvcol { width: 60px; text-align: center; vertical-align: top; paddin
 table.grid td { vertical-align: top; font-size: 13px; line-height: 1.55; border-left: 1px solid var(--line); padding: 8px; }
 .item { display: flex; gap: 6px; padding: 6px; border-radius: var(--radius); border: 1px solid transparent; }
 .item + .item { margin-top: 4px; }
-.editable .item { cursor: pointer; }
-.editable .item:hover { background: var(--teal-soft); border-color: #C5DEE7; }
 .item .key { color: var(--teal); font-weight: 700; flex: none; }
 .item .ev { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
-.item.editing { background: var(--head); border-color: var(--line); cursor: default; display: block; }
-.item.editing label { display: block; font-size: 12px; color: var(--muted); margin: 4px 0 2px; }
-.item.editing .row { display: flex; gap: 6px; margin-top: 8px; }
-.item.editing .row .danger { margin-left: auto; }
+.item .ev b { font-weight: 600; color: var(--teal); margin-right: 4px; font-size: 11px; letter-spacing: .02em; }
+.editing .item:not(.form) { cursor: pointer; }
+.editing .item:not(.form):hover { background: var(--teal-soft); border-color: #C5DEE7; }
+.item.form { display: block; background: var(--head); border-color: var(--line); }
+.item.form label { display: block; font-size: 12px; color: var(--muted); margin: 4px 0 2px; }
+.item.form textarea, .item.form input { display: block; width: 100%; min-width: 0; }
+.item.form .row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.item.form .row .danger { margin-left: auto; }
 .add { margin: 4px 6px 0; font-size: 12px; }
+
+/* 読むときと直すときを分ける。区画に editing が付いているあいだだけ、直すための部品を出す */
+.frame:not(.editing) .edit-only { display: none !important; }
+.frame.editing .read-only { display: none !important; }
+.frame.editing { border-color: var(--teal); box-shadow: 0 0 0 1px var(--teal); }
+.frame.editing > .head { border-left-color: var(--teal); background: var(--teal-soft); }
 
 /* 保存の知らせ */
 .toast {

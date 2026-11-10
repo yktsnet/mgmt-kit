@@ -1,32 +1,36 @@
 {% extends "base.html" %}
 {% block title %}設定 — board{% endblock %}
-{% block head %}<h1>設定</h1><span class="note">評価を回す前に決めておくもの。ここで直すと Drive の <code>settings/</code> のシートに書き戻す</span>{% endblock %}
+{% block head %}<h1>設定</h1><span class="note">Ladder・Reviewer・採用枠。直すと Drive の <code>settings/</code> のシートに書き戻す</span>{% endblock %}
 {% block main %}
 {% set d = definition %}
 {% set latest = d.versions[-1] if d.versions else none %}
 
-<section class="frame" id="definition">
+<section class="frame" id="definition" data-editable="{{ 'yes' if d.version == latest and latest }}">
   <div class="head">
-    <h2>定義</h2>
-    {% if d.version %}<span class="note">v{{ d.version }}・細目 {{ d.count }}{% if d.version != latest %}・前の版は直せない{% else %}・細目をクリックして直す{% endif %}</span>{% endif %}
+    <h2>Ladder</h2>
+    {% if d.version %}<span class="note">v{{ d.version }} · {{ d.count }} items{% if d.version != latest %} · 過去の版（直せない）{% endif %}</span>{% endif %}
     <span class="actions">
       {% if d.versions|length > 1 %}
       <span class="versions">{% for v in d.versions %}{% if v == d.version %}<b>v{{ v }}</b>{% else %}<a href="?v={{ v }}#definition">v{{ v }}</a>{% endif %}{% endfor %}</span>
       {% endif %}
-      {% if latest %}<button class="btn" type="button" data-action="new-version">版を上げる</button>{% endif %}
+      {% if d.version == latest and latest %}
+      <button class="btn edit-only" type="button" data-action="new-version">New version</button>
+      <button class="btn read-only" type="button" data-action="edit">Edit</button>
+      <button class="btn primary edit-only" type="button" data-action="done">Done</button>
+      {% endif %}
     </span>
   </div>
   {% if d.versions %}
   <div class="scroll">
-  <table class="grid {{ 'editable' if d.version == latest }}" data-version="{{ d.version }}">
+  <table class="grid" data-version="{{ d.version }}">
     <thead><tr><th class="lvcol"></th>{% for a in AXES %}<th>{{ a }}<span class="name">{{ AXIS_NAMES[a] }}</span></th>{% endfor %}</tr></thead>
     <tbody>{% for lv in (5, 4, 3, 2, 1) %}
       <tr><td class="lvcol"><span class="lv">L{{ lv }}</span></td>
       {% for a in AXES %}<td data-axis="{{ a }}" data-level="{{ lv }}">
-        {% for it in d.cells[(lv, a)] %}<div class="item" data-key="{{ it.key }}" data-text="{{ it.text }}" data-evidence="{{ it.evidence }}" tabindex="0">
-          <span class="key">{{ it.key }}</span><span>{{ it.text }}{% if it.evidence %}<span class="ev">読むもの：{{ it.evidence }}</span>{% endif %}</span>
+        {% for it in d.cells[(lv, a)] %}<div class="item" data-key="{{ it.key }}" data-text="{{ it.text }}" data-evidence="{{ it.evidence }}">
+          <span class="key">{{ it.key }}</span><span>{{ it.text }}{% if it.evidence %}<span class="ev"><b>Evidence</b> {{ it.evidence }}</span>{% endif %}</span>
         </div>{% endfor %}
-        {% if d.version == latest %}<button class="btn link add" type="button" data-action="add-item">＋ 細目</button>{% endif %}
+        <button class="btn link add edit-only" type="button" data-action="add-item">＋ Add</button>
       </td>{% endfor %}</tr>
     {% endfor %}</tbody>
   </table>
@@ -36,20 +40,29 @@
   {% endif %}
 </section>
 
-<section class="frame" id="people">
-  <div class="head"><h2>担当の割り当て</h2><span class="note">担当1人が、割り当てた人を評価する。選ぶとすぐ書き戻す</span></div>
+<section class="frame" id="people" data-editable="{{ 'yes' if people }}">
+  <div class="head">
+    <h2>Reviewer</h2><span class="note">誰が誰を評価するか。Reviewer 1人が、割り当てた人を評価する</span>
+    {% if people %}<span class="actions">
+      <button class="btn read-only" type="button" data-action="edit">Edit</button>
+      <button class="btn primary edit-only" type="button" data-action="done">Done</button>
+    </span>{% endif %}
+  </div>
   {% if people %}
   <div class="scroll">
-  <table>
-    <thead><tr><th>評価される人</th><th>担当</th><th>この人が評価する人</th></tr></thead>
+  <table class="fit">
+    <thead><tr><th>Member</th><th>Reviewer</th><th>Reviews</th></tr></thead>
     <tbody>{% for p in people %}
       <tr class="{{ 'unassigned' if not p.evaluator }}">
         <td class="nowrap">{{ p.name }}</td>
-        <td><select data-action="evaluator" data-email="{{ p.email }}" aria-label="{{ p.name }} の担当">
-          <option value="">未割り当て</option>
-          {% for o in people if o.email != p.email %}<option value="{{ o.email }}" {{ 'selected' if o.email == p.evaluator }}>{{ o.name }}</option>{% endfor %}
-        </select></td>
-        <td class="muted">{% for q in people if q.evaluator == p.email %}{{ q.name }}{% if not loop.last %}、{% endif %}{% endfor %}</td>
+        <td class="nowrap">
+          <span class="read-only">{{ p.evaluator_name or 'Unassigned' }}</span>
+          <select class="edit-only" data-action="evaluator" data-email="{{ p.email }}" aria-label="{{ p.name }} の Reviewer">
+            <option value="">Unassigned</option>
+            {% for o in people if o.email != p.email %}<option value="{{ o.email }}" {{ 'selected' if o.email == p.evaluator }}>{{ o.name }}</option>{% endfor %}
+          </select>
+        </td>
+        <td class="muted">{% for q in people if q.evaluator == p.email %}{{ q.name }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
       </tr>
     {% endfor %}</tbody>
   </table>
@@ -59,18 +72,24 @@
   {% endif %}
 </section>
 
-<section class="frame" id="requisitions">
-  <div class="head"><h2>採用の枠</h2><span class="note">枠ごとの人数と、軸ごとに求める高さ（1〜5、空欄は求めない）</span></div>
+<section class="frame" id="requisitions" data-editable="{{ 'yes' if requisitions }}">
+  <div class="head">
+    <h2>採用枠</h2><span class="note">枠ごとの人数と、軸ごとに求める高さ（1〜5、空欄は求めない）</span>
+    {% if requisitions %}<span class="actions">
+      <button class="btn read-only" type="button" data-action="edit">Edit</button>
+      <button class="btn edit-only" type="button" data-action="done">Cancel</button>
+      <button class="btn primary edit-only" type="button" data-action="save-req">Save</button>
+    </span>{% endif %}
+  </div>
   {% if requisitions %}
   <div class="scroll">
-  <table>
-    <thead><tr><th>枠</th><th>参照ペルソナ</th><th class="num">人数</th>{% for a in AXES %}<th class="ax" title="{{ AXIS_NAMES[a] }}">{{ a }}</th>{% endfor %}<th></th></tr></thead>
+  <table class="fit">
+    <thead><tr><th>Role</th><th>Persona</th><th class="num">Headcount</th>{% for a in AXES %}<th class="ax" title="{{ AXIS_NAMES[a] }}">{{ a }}</th>{% endfor %}</tr></thead>
     <tbody>{% for r, target in requisitions %}
       <tr data-req="{{ r.name }}">
         <td class="nowrap">{{ r.name }}</td><td>{{ r.persona }}</td>
-        <td class="num"><input type="number" min="0" name="count" value="{{ r.count }}" aria-label="{{ r.name }} の人数"></td>
-        {% for t in target %}<td class="ax"><input type="number" min="1" max="5" name="{{ AXES[loop.index0] }}" value="{{ t if t is not none else '' }}" aria-label="{{ r.name }} の {{ AXES[loop.index0] }}"></td>{% endfor %}
-        <td><button class="btn primary" type="button" data-action="save-req" hidden>保存</button></td>
+        <td class="num"><span class="read-only">{{ r.count }}</span><input class="edit-only" type="number" min="0" name="count" value="{{ r.count }}" aria-label="{{ r.name }} の Headcount"></td>
+        {% for t in target %}<td class="ax"><span class="read-only">{{ t if t is not none else '' }}</span><input class="edit-only" type="number" min="1" max="5" name="{{ AXES[loop.index0] }}" value="{{ t if t is not none else '' }}" aria-label="{{ r.name }} の {{ AXES[loop.index0] }}"></td>{% endfor %}
       </tr>
     {% endfor %}</tbody>
   </table>

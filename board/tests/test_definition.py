@@ -13,7 +13,7 @@ from app.sync import sync
 BOARD = Path(__file__).resolve().parent.parent
 LADDER_MD = BOARD.parent / "ladder" / "docs" / "ladder.md"
 SAMPLES = BOARD / "samples" / "drive"
-HEADER = ["軸", "段階", "細目", "判定文", "読むもの"]
+HEADER = ["軸", "段階", "細目", "判定文", "Evidence"]
 
 
 def full(version_rows=None):
@@ -82,3 +82,8 @@ def test_sample_definition_syncs(tmp_path):
     sync(XlsxFolderSource(drive), db)
     assert latest_version(db) == 2
     assert db.execute("SELECT count(*) FROM definition_items WHERE version = 1").fetchone()[0] == n
+
+
+def test_old_evidence_header_is_still_read():
+    rows = [["軸", "段階", "細目", "判定文", "読むもの"]] + [[a, f"L{lv}", "a", "x", "前の見出し"] for a in AXES for lv in range(1, 6)]
+    assert parse_definition({"v1": rows})[1][0].evidence == "前の見出し"
