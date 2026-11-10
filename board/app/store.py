@@ -77,6 +77,17 @@ CREATE TABLE IF NOT EXISTS usage (
   skills INTEGER NOT NULL,
   issues_opened INTEGER NOT NULL
 );
+-- 設定の定義。版ごとに5軸×5段階の細目を持つ。前の版も消さず、前の版で付けた評価をそのまま読めるようにする
+CREATE TABLE IF NOT EXISTS definition_items (
+  version INTEGER NOT NULL,
+  axis TEXT NOT NULL,
+  level INTEGER NOT NULL,
+  key TEXT NOT NULL,
+  text TEXT NOT NULL,
+  evidence TEXT NOT NULL,
+  file_id TEXT NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+  PRIMARY KEY (version, axis, level, key)
+);
 """
 
 
