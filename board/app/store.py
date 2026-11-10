@@ -95,6 +95,21 @@ CREATE TABLE IF NOT EXISTS people (
   evaluator TEXT,
   file_id TEXT NOT NULL REFERENCES files(id) ON DELETE CASCADE
 );
+-- 評価1件（評価される人1人・期1つ）と、細目ごとの判定
+CREATE TABLE IF NOT EXISTS reviews (
+  file_id TEXT PRIMARY KEY REFERENCES files(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  period TEXT NOT NULL,
+  version INTEGER NOT NULL,
+  reviewer TEXT
+);
+CREATE TABLE IF NOT EXISTS verdicts (
+  file_id TEXT NOT NULL REFERENCES reviews(file_id) ON DELETE CASCADE,
+  item TEXT NOT NULL,
+  verdict TEXT NOT NULL,
+  note TEXT NOT NULL,
+  PRIMARY KEY (file_id, item)
+);
 """
 
 

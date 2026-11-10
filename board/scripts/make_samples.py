@@ -164,6 +164,51 @@ def people_book(names: list[str]) -> Workbook:
     return wb
 
 
+PERIOD_ID = "2026-H2"
+# 評価のダミー。STAFF の点から判定を作る。途中の人は C〜E を空欄のまま残し、未着手の人はファイルを置かない
+REVIEW_DONE = ["emma-hughes", "ben-carter", "chloe-evans", "grace-turner", "henry-ward"]
+REVIEW_PARTIAL = ["daniel-brooks", "felix-grant"]
+
+
+def review_book(name: str, scores: list, partial: bool) -> Workbook:
+    from app.definition import from_ladder_md
+    from app.review import template_rows
+
+    items = from_ladder_md(LADDER_MD.read_text(encoding="utf-8"))
+    wb = Workbook()
+    meta = wb.active
+    assert meta is not None
+    meta.title = "対象"
+    ev = EVALUATORS.get(name)
+    for row in (["メール", f"{name}@{DOMAIN}"], ["期", PERIOD_ID], ["版", "v1"], ["Reviewer", f"{ev}@{DOMAIN}" if ev else None]):
+        meta.append(row)
+    meta.column_dimensions["B"].width = 30
+    ws = wb.create_sheet("評価")
+    by_axis = dict(zip(AXES, scores))
+    for row in template_rows(items):
+        if row[0] in AXES:
+            axis, level = row[0], int(row[1][1:])
+            s = by_axis[axis]
+            if partial and axis in ("C", "D", "E"):
+                pass
+            elif s is None:
+                row[4] = "未観測" if level == 2 else None
+            elif level <= s:
+                row[4] = "○"
+            elif level == s + 1:
+                # 届かなかったマスは、最初の細目だけ × にする。残りは判定しなくても段階が決まる
+                row[4] = "×" if row[2] == "a" else None
+            if row[4] in ("○", "×"):
+                row[5] = "PR と Issue を読んで確かめた"
+        ws.append(row)
+    dv = DataValidation(type="list", formula1='"○,×,未観測"', allow_blank=True)
+    dv.add("E2:E500")
+    ws.add_data_validation(dv)
+    for col, width in zip("ABCDEF", (6, 6, 6, 64, 8, 36)):
+        ws.column_dimensions[col].width = width
+    return wb
+
+
 def requisition_book(rows: list) -> Workbook:
     wb = Workbook()
     ws = wb.active
@@ -192,6 +237,10 @@ def main() -> None:
     definition_book().save(DRIVE / "settings" / "definition.xlsx")
     people_book([]).save(TEMPLATES / "people.xlsx")
     people_book([name for name, _ in STAFF]).save(DRIVE / "settings" / "people.xlsx")
+    (DRIVE / "reviews" / PERIOD_ID).mkdir(parents=True)
+    staff = dict(STAFF)
+    for name in REVIEW_DONE + REVIEW_PARTIAL:
+        review_book(name, staff[name], name in REVIEW_PARTIAL).save(DRIVE / "reviews" / PERIOD_ID / f"{name}.xlsx")
 
     requisition_book(REQUISITIONS).save(DRIVE / "settings" / "requisitions.xlsx")
     for name, req, stage, applied, source, interviews in CANDIDATES:
