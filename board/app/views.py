@@ -1,5 +1,6 @@
 """画面に出す値を SQLite から組み立てる。HTML は知らない。"""
 
+import datetime as dt
 import sqlite3
 from dataclasses import dataclass
 
@@ -149,3 +150,58 @@ def review_detail(db: sqlite3.Connection, period: str, email: str):
     # Submit したあとでシートが直されたら、出した内容と画面の判定がずれている
     edited_after = bool(st and sheet and st["state"] != "draft" and sheet["modified"] > st["at"])
     return {"person": person, "review": r, "row": row, "cells": cells, "sheet": sheet, "state": st, "edited_after": edited_after, "records": records(db, email, period)}
+
+
+# ---- 現在地
+
+
+@dataclass
+class NowRow:
+    email: str
+    name: str
+    period: str | None
+    level: int | None
+    levels: dict
+    suggested: str | None
+    chosen: str | None
+    chosen_by: str | None
+    # 次に上げる軸を決める役。まだ決めていないときに名前を出す
+    reviewer_name: str | None
+
+
+def next_axis(levels: dict) -> str | None:
+    """最も低い軸。未観測と途中の軸は選ばない。同じ低さなら A から順に選ぶ。"""
+    from .parse import AXES
+
+    decided = [(r.level, a) for a in AXES if (r := levels.get(a)) and not r.pending and r.level is not None]
+    return min(decided)[1] if decided else None
+
+
+def now(db: sqlite3.Connection) -> tuple[list[NowRow], list[tuple[str, list[str]]]]:
+    """在籍者ごとの次に上げる1軸と、L2 で止まっている人たち。利用状況の図と表は usage_report が作る。"""
+    people = db.execute("SELECT * FROM people ORDER BY rowid").fetchall()
+    names = {p["email"]: p["name"] for p in people}
+
+    rows, stops = [], {}
+    for p in people:
+        rv = db.execute("SELECT * FROM reviews WHERE email = ? ORDER BY period DESC LIMIT 1", (p["email"],)).fetchone()
+        levels, level, period = {}, None, None
+        if rv:
+            r = _row(db, p, rv["file_id"], rv["period"])
+            levels, level, period = r.levels, r.level, rv["period"]
+            # L2 の判定文は型が強制するものだけで書いてあるので、L2 で止まるのは型の欠陥を指す（ladder/docs/scoring.md）。
+            # L3 から上で止まるのは、上の段階ほど届きにくいだけなので数えない
+            for a, res in levels.items():
+                if not res.pending and res.level == 1:
+                    stops.setdefault(a, []).append(p["name"])
+        plan = db.execute(
+            "SELECT g.axis, q.name AS by_name FROM growth_plans g LEFT JOIN people q ON q.email = g.by WHERE g.email = ? AND g.period = ?",
+            (p["email"], period),
+        ).fetchone() if period else None
+        rows.append(NowRow(
+            p["email"], p["name"], period, level, levels, next_axis(levels),
+            plan["axis"] if plan else None, plan["by_name"] if plan else None,
+            names.get(p["evaluator"]),
+        ))
+    together = sorted(((a, names) for a, names in stops.items() if len(names) >= 2), key=lambda x: (-len(x[1]), x[0]))
+    return rows, together

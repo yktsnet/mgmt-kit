@@ -79,3 +79,25 @@ def records(db: sqlite3.Connection, email: str, period: str) -> list[sqlite3.Row
         "WHERE r.email = ? AND r.period = ? ORDER BY r.at DESC, r.id DESC",
         (email, period),
     ).fetchall()
+
+
+def set_next_axis(db: sqlite3.Connection, me: sqlite3.Row, email: str, period: str, axis: str) -> None:
+    """次に上げる1軸を決める。その人の Reviewer か Manager だけができ、決めたことは記録に残す。"""
+    from .parse import AXES
+
+    if axis not in AXES:
+        raise SheetError("軸は A〜E のどれか")
+    person = db.execute("SELECT evaluator FROM people WHERE email = ?", (email,)).fetchone()
+    if not person or not (me["role"] == "manager" or person["evaluator"] == me["email"]):
+        raise SheetError("この操作をする権限が無い")
+    at = now()
+    with db:
+        db.execute(
+            "INSERT INTO growth_plans (email, period, axis, at, by) VALUES (?, ?, ?, ?, ?) "
+            "ON CONFLICT(email, period) DO UPDATE SET axis = excluded.axis, at = excluded.at, by = excluded.by",
+            (email, period, axis, at, me["email"]),
+        )
+        db.execute(
+            "INSERT INTO review_records (email, period, at, by, kind, body) VALUES (?, ?, ?, ?, 'memo', ?)",
+            (email, period, at, me["email"], f"次に上げる軸を {axis} にした"),
+        )

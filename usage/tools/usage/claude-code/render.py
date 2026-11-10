@@ -477,11 +477,8 @@ def member_page(email: str, days: list[dt.date], by_date: dict[dt.date, dict], l
     ])
 
 
-def main() -> None:
-    days = load()
-    if not days:
-        print("No data yet. Nothing to render.")
-        return
+def period(days: list[dict]) -> tuple[dict[dt.date, dict], list[dt.date], bool]:
+    """日付ごとの集計、図と表に出す平日、seat を決められるだけの日数があるか。board もこの決め方で並べる。"""
     by_date = {date_of(d): d for d in days}
     last = date_of(days[-1])
     # 送信設定が届く前の日は全員が空になる。使わなかった日と見分けられないので、期間に入れない
@@ -490,7 +487,16 @@ def main() -> None:
     start = max(first, last - dt.timedelta(days=MEMBER_DAYS - 1))
     full = (last - first).days + 1 >= 7 * SEAT_WEEKS
     span = [start + dt.timedelta(days=i) for i in range((last - start).days + 1)]
-    span = [d for d in span if d.weekday() < 5]
+    return by_date, [d for d in span if d.weekday() < 5], full
+
+
+def main() -> None:
+    days = load()
+    if not days:
+        print("No data yet. Nothing to render.")
+        return
+    by_date, span, full = period(days)
+    last = date_of(days[-1])
     if not span:
         print("No weekday data yet. Nothing to render.")
         return

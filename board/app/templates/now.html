@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}現在地 — board{% endblock %}
+{% block head %}<h1>現在地</h1><span class="note">評価と評価のあいだに、一人ずつがいまどこにいるかを見て、次に上げる1軸を決める。下の図と表は Claude Code の利用状況の MD と同じもの</span>{% endblock %}
+{% block main %}
+
+<section class="frame" id="next" data-editable="{{ 'yes' if can_edit }}">
+  <div class="head">
+    <h2>次に上げる1軸</h2>
+    <span class="note">最新の評価で最も低い軸。未観測と途中の軸は選ばない。決めた軸に対応する手順を回させることが、そのまま育成になる</span>
+    {% if can_edit %}<span class="actions">
+      <button class="btn read-only" type="button" data-action="edit">Edit</button>
+      <button class="btn primary edit-only" type="button" data-action="done">Done</button>
+    </span>{% endif %}
+  </div>
+  <div class="scroll">
+  <table class="report">
+    <thead><tr><th>Member</th><th class="num">Level</th><th>次に上げる軸</th><th>理由</th><th>決めた人</th></tr></thead>
+    <tbody>{% for r in rows %}{% set nx = r.chosen or r.suggested %}
+      <tr>
+        <td class="nowrap">{% if r.period %}<a href="/reviews/{{ r.period }}/{{ r.email }}">{{ r.name }}</a>{% else %}{{ r.name }}{% endif %}</td>
+        <td class="num">{% if r.level %}L{{ r.level }}{% else %}<span class="muted">-</span>{% endif %}</td>
+        <td class="nowrap">
+          <span class="read-only">{% if nx %}{{ nx }} {{ AXIS_NAMES[nx] }}{% else %}<span class="muted">評価が出てから</span>{% endif %}</span>
+          {% if r.period and r.email in can_edit %}<select class="edit-only" data-growth="{{ r.period }}/{{ r.email }}" aria-label="{{ r.name }} の次に上げる軸">
+            {% for a in AXES %}<option value="{{ a }}" {{ 'selected' if a == nx }}>{{ a }} {{ AXIS_NAMES[a] }}</option>{% endfor %}
+          </select>{% endif %}
+        </td>
+        <td class="muted">{% if nx and r.levels.get(nx) and r.levels[nx].level %}{{ nx }} が L{{ r.levels[nx].level }}{% if r.chosen and r.chosen != r.suggested %}（最も低いのは {{ r.suggested }}）{% elif not r.chosen %}。最も低い軸{% endif %}{% else %}-{% endif %}</td>
+        <td class="nowrap">{% if r.chosen_by %}{{ r.chosen_by }}{% elif r.reviewer_name and nx %}{{ r.reviewer_name }}<span class="muted">（未決定）</span>{% else %}<span class="muted">-</span>{% endif %}</td>
+      </tr>
+    {% endfor %}</tbody>
+  </table>
+  </div>
+  {% for a, names in together %}
+  <p class="foot">{{ a }} が L1 のまま L2 に届かない人が {{ names|length }} 人いる（{{ names|join('、') }}）。L2 は型を回せば届く段階なので、人ではなく型か判定文を見直す</p>
+  {% endfor %}
+</section>
+
+{% if report %}
+<div class="pair">
+<section class="frame">
+  <div class="head"><h2>日ごとのトークン量</h2><span class="note">{{ report.since }} 〜 {{ report.until }} の平日</span></div>
+  <div class="chart">{{ report.tokens_chart|safe }}</div>
+</section>
+<section class="frame">
+  <div class="head"><h2>日ごとの commit</h2></div>
+  <div class="chart">{{ report.commits_chart|safe }}</div>
+</section>
+</div>
+
+<section class="frame">
+  <div class="head"><h2>量と成果</h2><span class="note">期間の合計。トークン量の多い順。名前を押すと毎日の推移が出る</span></div>
+  <div class="scroll">
+  <table class="report wide">
+    <thead><tr><th>Member</th><th class="num">利用時間</th><th class="num">トークン量</th><th class="num">commit</th><th class="num">PR</th><th class="num">追加した行</th><th class="num">削除した行</th><th class="num">立てた Issue</th><th class="num">閉じた Issue</th></tr></thead>
+    <tbody>{% for u in report.rows %}<tr>
+      <td class="nowrap"><a href="/now/{{ u.email }}">{{ u.name }}</a></td>
+      <td class="num">{{ u.minutes }}</td><td class="num">{{ u.tokens_label }}</td><td class="num">{{ u.commits }}</td><td class="num">{{ u.pull_requests }}</td>
+      <td class="num">{{ u.lines_added }}</td><td class="num">{{ u.lines_removed }}</td>
+      <td class="num">{{ u.issues[0] if u.issues else '-' }}</td><td class="num">{{ u.issues[1] if u.issues else '-' }}</td>
+    </tr>{% endfor %}</tbody>
+  </table>
+  </div>
+</section>
+
+<section class="frame">
+  <div class="head"><h2>使い方</h2></div>
+  <div class="scroll">
+  <table class="report wide">
+    <thead><tr><th>Member</th><th class="num">スキル</th><th>よく使ったスキル</th><th class="num">サブエージェントに任せた割合</th><th>Effort</th><th>モデル</th><th class="num">1会話あたりのトークン量</th></tr></thead>
+    <tbody>{% for u in report.rows %}<tr>
+      <td class="nowrap"><a href="/now/{{ u.email }}">{{ u.name }}</a></td>
+      <td class="num">{{ u.skills }}</td>
+      <td>{% for k, n in u.top_skills %}<code>{{ k }}</code>（{{ n }}）{% if not loop.last %}、{% endif %}{% else %}<span class="muted">-</span>{% endfor %}</td>
+      <td class="num">{{ u.subagent }}</td><td>{{ u.efforts }}</td><td>{{ u.families }}</td><td class="num">{{ u.per_session }}</td>
+    </tr>{% endfor %}</tbody>
+  </table>
+  </div>
+</section>
+{% else %}
+<section class="frame"><p class="empty">Claude Code の利用状況のデータが無い。</p></section>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="/static/settings.js"></script><script src="/static/now.js"></script>{% endblock %}
