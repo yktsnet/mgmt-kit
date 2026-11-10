@@ -36,7 +36,7 @@ class DriveSource:
         while True:
             params = {
                 "q": f"'{folder_id}' in parents and trashed = false",
-                "fields": "nextPageToken, files(id, name, mimeType, modifiedTime)",
+                "fields": "nextPageToken, files(id, name, mimeType, modifiedTime, lastModifyingUser(displayName))",
                 "pageSize": 1000,
                 # 共有ドライブに置いたフォルダも読む
                 "supportsAllDrives": "true",
@@ -61,7 +61,7 @@ class DriveSource:
                 if f["mimeType"] == FOLDER:
                     stack.append((f["id"], f"{path}/"))
                 elif f["mimeType"] == SPREADSHEET:
-                    refs.append(FileRef(id=f["id"], path=path, modified=f["modifiedTime"]))
+                    refs.append(FileRef(id=f["id"], path=path, modified=f["modifiedTime"], modified_by=f.get("lastModifyingUser", {}).get("displayName", "")))
         return sorted(refs, key=lambda r: r.path)
 
     def read(self, ref: FileRef) -> Book:

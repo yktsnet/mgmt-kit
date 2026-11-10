@@ -4,6 +4,9 @@
 {%- elif r.level is none -%}<span class="lvx none" title="未観測">—</span>
 {%- else -%}<span class="lvx">{{ r.level }}</span>{%- endif -%}
 {%- endmacro -%}
-{%- macro status(s) -%}
-<span class="status {{ s }}">{{ {'not-started': 'Not started', 'in-progress': 'In progress', 'done': 'Done'}[s] }}</span>
+{%- macro status(row) -%}
+{%- if row.state == 'approved' -%}<span class="status approved">Approved</span>
+{%- elif row.state == 'submitted' -%}<span class="status submitted">Submitted</span>
+{%- else -%}<span class="status {{ row.status }}">{{ {'not-started': 'Not started', 'in-progress': 'In progress', 'ready': 'Ready'}[row.status] }}</span>
+{%- endif -%}
 {%- endmacro -%}

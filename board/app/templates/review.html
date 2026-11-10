@@ -4,15 +4,29 @@
 {% block head %}<h1><a href="/reviews?period={{ period }}" class="back">評価</a> / {{ person.name }}</h1>
 <span class="note">{{ period }}{% if review %} · Ladder v{{ review.version }}{% endif %} · Reviewer {{ person.evaluator_name or 'Unassigned' }}</span>{% endblock %}
 {% block main %}
-<section class="frame">
-  <div class="head"><h2>Result</h2>{{ status(row.status) }}{% if row.status == 'in-progress' %}<span class="note">{{ row.judged }} / {{ row.total }} items</span>{% endif %}</div>
-  <table class="fit">
-    <thead><tr>{% for a in AXES %}<th class="ax" title="{{ AXIS_NAMES[a] }}">{{ a }}</th>{% endfor %}<th class="ax">Level</th></tr></thead>
-    <tbody><tr>{% for a in AXES %}<td class="ax">{{ axis(row.levels.get(a)) }}</td>{% endfor %}
-      <td class="ax">{% if row.level %}<span class="lv">L{{ row.level }}</span>{% else %}<span class="lvx none">—</span>{% endif %}</td></tr></tbody>
-  </table>
+<section class="frame summary">
+  <div class="level">
+    <span class="label">Level</span>
+    {% if row.level %}<span class="big">L{{ row.level }}</span>{% else %}<span class="big none">—</span>{% endif %}
+    <span class="hint">A と B の低いほう</span>
+  </div>
+  <div class="axes">{% for a in AXES %}{% set r = row.levels.get(a) %}
+    <div class="axis">
+      <span class="name"><b>{{ a }}</b> {{ AXIS_NAMES[a] }}</span>
+      <span class="val">{% if not r %}<span class="none">—</span>{% elif r.pending %}<span class="pending" title="判定の途中">…</span>{% elif r.level is none %}<span class="none" title="未観測">未観測</span>{% else %}L{{ r.level }}{% endif %}</span>
+    </div>{% endfor %}
+  </div>
+  <div class="state">
+    {{ status(row) }}
+    {% if row.status == 'in-progress' and row.state == 'draft' %}<span class="note">{{ row.judged }} / {{ row.total }} items</span>{% endif %}
+    {% if sheet %}<span class="note">Sheet updated {{ sheet.modified|when }}{% if sheet.modified_by %} by {{ sheet.modified_by }}{% endif %}</span>{% endif %}
+    {% if actions %}<span class="buttons">{% for a in actions %}<button class="btn {{ 'primary' if a != 'reopen' }}" type="button" data-review-action="{{ a }}">{{ {'submit': 'Submit', 'approve': 'Approve', 'reopen': 'Reopen'}[a] }}</button>{% endfor %}</span>{% endif %}
+  </div>
+  {% if edited_after %}<p class="warn">{{ state.state|capitalize }} のあとでシートが直されている。出した内容と、いまの判定がずれているかもしれない。</p>{% endif %}
 </section>
 
+<div class="columns">
+<div class="main-col">
 {% if review %}
 <section class="frame">
   <div class="head"><h2>Items</h2><span class="note">L1 は下限で判定しない。判定と根拠はシートで直す</span></div>
@@ -34,4 +48,23 @@
 {% else %}
 <section class="frame"><p class="empty">この期の評価のシートがまだ無い。</p></section>
 {% endif %}
+</div>
+<aside class="side-col">
+<section class="frame" id="record">
+  <div class="head"><h2>Record</h2><span class="note">足すだけで、直したり消したりはしない</span></div>
+  <form class="memo" data-memo>
+    <textarea name="body" placeholder="面談で話したこと、合意したこと、次に見ること" rows="3"></textarea>
+    <button class="btn primary" type="submit">Add</button>
+  </form>
+  {% if records %}
+  <ol class="timeline">{% for r in records %}
+    <li class="{{ r.kind }}"><span class="meta"><span class="by">{{ r.by_name or r.by }}</span><span class="at">{{ r.at|when }}</span></span>
+      {% if r.kind == 'state' %}<span class="body"><span class="status {{ {'Submit': 'submitted', 'Approve': 'approved', 'Reopen': 'reopened'}[r.body] }}">{{ r.body }}</span></span>
+      {% else %}<span class="body note">{{ r.body }}</span>{% endif %}</li>
+  {% endfor %}</ol>
+  {% else %}<p class="empty">まだ記録が無い。</p>{% endif %}
+</section>
+</aside>
+</div>
 {% endblock %}
+{% block scripts %}<script src="/static/review.js" data-period="{{ period }}" data-email="{{ person.email }}"></script>{% endblock %}

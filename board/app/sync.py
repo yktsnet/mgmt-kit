@@ -76,10 +76,10 @@ def sync(source: Source, db: sqlite3.Connection) -> SyncResult:
 
 def _upsert_file(db: sqlite3.Connection, ref: FileRef, kind: str | None, error: str | None) -> None:
     db.execute(
-        "INSERT INTO files (id, path, modified, kind, error) VALUES (?, ?, ?, ?, ?) "
+        "INSERT INTO files (id, path, modified, kind, error, modified_by) VALUES (?, ?, ?, ?, ?, ?) "
         "ON CONFLICT(id) DO UPDATE SET path = excluded.path, modified = excluded.modified, "
-        "kind = excluded.kind, error = excluded.error",
-        (ref.id, ref.path, ref.modified, kind, error),
+        "kind = excluded.kind, error = excluded.error, modified_by = excluded.modified_by",
+        (ref.id, ref.path, ref.modified, kind, error, ref.modified_by or None),
     )
 
 
