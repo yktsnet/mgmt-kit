@@ -5,10 +5,14 @@ import datetime as dt
 import shutil
 from pathlib import Path
 
+import sys
+
 from openpyxl import Workbook
 from openpyxl.worksheet.datavalidation import DataValidation
 
 BOARD = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(BOARD))
+LADDER_MD = BOARD.parent / "ladder" / "docs" / "ladder.md"
 TEMPLATES = BOARD / "templates"
 DRIVE = BOARD / "samples" / "drive"
 LADDER = BOARD / "samples" / "ladder"
@@ -119,6 +123,25 @@ def candidate_book(profile: dict | None = None, interviews: list | None = None) 
     return wb
 
 
+DEF_HEADER = ["軸", "段階", "細目", "判定文", "読むもの"]
+
+
+def definition_book() -> Workbook:
+    """ladder.md の判定文を句点ごとに細目へ分けた初版（v1）。"""
+    from app.definition import from_ladder_md
+
+    wb = Workbook()
+    ws = wb.active
+    assert ws is not None
+    ws.title = "v1"
+    ws.append(DEF_HEADER)
+    for x in from_ladder_md(LADDER_MD.read_text(encoding="utf-8")):
+        ws.append([x.axis, f"L{x.level}", x.key, x.text, x.evidence])
+    for col, width in zip("ABCDE", (6, 6, 6, 72, 48)):
+        ws.column_dimensions[col].width = width
+    return wb
+
+
 def requisition_book(rows: list) -> Workbook:
     wb = Workbook()
     ws = wb.active
@@ -142,6 +165,9 @@ def main() -> None:
 
     candidate_book().save(TEMPLATES / "candidate.xlsx")
     requisition_book([]).save(TEMPLATES / "requisitions.xlsx")
+    definition_book().save(TEMPLATES / "definition.xlsx")
+    (DRIVE / "settings").mkdir()
+    definition_book().save(DRIVE / "settings" / "definition.xlsx")
 
     requisition_book(REQUISITIONS).save(DRIVE / "requisitions.xlsx")
     for name, req, stage, applied, source, interviews in CANDIDATES:

@@ -4,6 +4,7 @@ import logging
 import sqlite3
 from dataclasses import dataclass, field
 
+from .definition import parse_definition, store_definition
 from .parse import SheetError, parse_candidate, parse_requisitions
 from .sources import FileRef, Source
 
@@ -11,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 REQUISITIONS = "requisitions"
 CANDIDATES = "candidates/"
+DEFINITION = "settings/definition"
+KINDS = ("candidate", "requisitions", "definition")
 
 
 @dataclass
@@ -23,6 +26,8 @@ class SyncResult:
 def kind_of(ref: FileRef) -> str | None:
     if ref.path == REQUISITIONS:
         return "requisitions"
+    if ref.path == DEFINITION:
+        return "definition"
     if ref.path.startswith(CANDIDATES):
         return "candidate"
     return None
@@ -34,7 +39,7 @@ def sync(source: Source, db: sqlite3.Connection) -> SyncResult:
     # ladder の採点結果も files に入るので、シートの種類だけを突き合わせる
     known = {
         row["id"]: row["modified"]
-        for row in db.execute("SELECT id, modified FROM files WHERE kind IN ('candidate', 'requisitions')")
+        for row in db.execute(f"SELECT id, modified FROM files WHERE kind IN ({','.join('?' * len(KINDS))})", KINDS)
     }
     seen = {r.id for r in refs}
 
@@ -83,6 +88,7 @@ def _upsert_file(db: sqlite3.Connection, ref: FileRef, kind: str | None, error: 
 def _clear(db: sqlite3.Connection, file_id: str) -> None:
     db.execute("DELETE FROM candidates WHERE file_id = ?", (file_id,))
     db.execute("DELETE FROM requisitions WHERE file_id = ?", (file_id,))
+    db.execute("DELETE FROM definition_items WHERE file_id = ?", (file_id,))
 
 
 def _store(db: sqlite3.Connection, ref: FileRef, kind: str | None, book) -> None:
@@ -112,6 +118,8 @@ def _store(db: sqlite3.Connection, ref: FileRef, kind: str | None, book) -> None
             "INSERT INTO scores (email, origin, axis, value) VALUES (?, 'interview', ?, ?)",
             [(c.email, a, v) for a, v in c.scores().items()],
         )
+    elif kind == "definition":
+        store_definition(db, ref.id, parse_definition(book))
     elif kind == "requisitions":
         for r in parse_requisitions(book):
             db.execute(
