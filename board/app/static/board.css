@@ -152,3 +152,16 @@ table.grid td { vertical-align: top; font-size: 13px; line-height: 1.55; border-
 .item.unobs .mark { color: var(--muted); font-size: 11px; font-weight: 400; width: auto; }
 .item.blank { color: var(--muted); }
 .item.blank .mark::before { content: "·"; color: #B0B6C3; }
+
+/* ログイン */
+.top .me { display: flex; align-items: center; gap: 10px; margin-left: 16px; padding-left: 16px; border-left: 1px solid rgba(255, 255, 255, .2); font-size: 13px; white-space: nowrap; }
+.top .me .btn.link { color: #fff; opacity: .75; font-size: 12px; }
+.top .me .btn.link:hover { opacity: 1; }
+.role { display: inline-block; margin-left: 6px; font-size: 11px; padding: 0 6px; border-radius: 8px; border: 1px solid var(--gold); color: var(--gold); }
+.top .role { border-color: rgba(255, 255, 255, .5); color: #fff; }
+.signin { max-width: 520px; margin: 48px auto; padding: 0 16px; }
+.signin .pad { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.signin .error { color: var(--crim); background: var(--crim-soft); padding: 8px 12px; border-radius: var(--radius); }
+.demo-login { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+.demo-login .person { display: flex; align-items: center; justify-content: space-between; text-align: left; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); cursor: pointer; }
+.demo-login .person:hover { border-color: var(--teal); background: var(--teal-soft); }

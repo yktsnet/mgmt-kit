@@ -18,6 +18,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv("BOARD_SYNC_INTERVAL", "0")
     monkeypatch.setenv("BOARD_DB", ":memory:")
     c = TestClient(create_app(config.load()))
+    c.post("/auth/demo", data={"email": "alice-walker@example.com"})
     c.drive = drive
     return c
 

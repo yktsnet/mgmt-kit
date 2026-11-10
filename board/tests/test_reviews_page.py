@@ -17,7 +17,9 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv("BOARD_XLSX_DIR", str(drive))
     monkeypatch.setenv("BOARD_SYNC_INTERVAL", "0")
     monkeypatch.setenv("BOARD_DB", ":memory:")
-    return TestClient(create_app(config.load()))
+    c = TestClient(create_app(config.load()))
+    c.post("/auth/demo", data={"email": "alice-walker@example.com"})
+    return c
 
 
 def test_home_goes_to_reviews(client):
