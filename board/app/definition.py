@@ -11,6 +11,7 @@ from .parse import AXES, SheetError, _table, _text
 from .sources import Book
 
 LEVELS = (1, 2, 3, 4, 5)
+DEFINITION_HEADER = ["軸", "段階", "細目", "判定文", "Evidence"]
 VERSION = re.compile(r"v(\d+)")
 
 
@@ -56,7 +57,8 @@ def _version(title: str, rows: list) -> list[Item]:
             raise SheetError(f"{where}: 段階 must be L1-L5, got {r.get('段階')!r}")
         if not re.fullmatch(r"[a-z]", key):
             raise SheetError(f"{where}: 細目 must be one letter a-z, got {key!r}")
-        item = Item(axis, int(level_text), key, text, _text(r.get("読むもの")))
+        # 見出しを Evidence に変える前に作ったシートも読む
+        item = Item(axis, int(level_text), key, text, _text(r.get("Evidence", r.get("読むもの"))))
         if item.id in seen:
             raise SheetError(f"{where}: duplicate {item.id}")
         seen.add(item.id)
@@ -100,7 +102,8 @@ def from_ladder_md(text: str) -> list[Item]:
             continue
         m = re.match(r"\|\s*L([1-5])\s*\|(.+?)\|(.+?)\|\s*$", line)
         if axis and m:
-            level, statement, evidence = int(m.group(1)), m.group(2).strip(), m.group(3).strip()
+            # シートを直すのは Markdown を書かない人なので、コードの印は外す
+            level, statement, evidence = (int(m.group(1)), *(g.replace("`", "").strip() for g in m.group(2, 3)))
             for i, part in enumerate(split_statement(statement)):
                 items.append(Item(axis, level, "abcdefghijklmnopqrstuvwxyz"[i], part, evidence))
     return items

@@ -5,15 +5,17 @@ import sqlite3
 from dataclasses import dataclass, field
 
 from .definition import parse_definition, store_definition
+from .people import parse_people, store_people
 from .parse import SheetError, parse_candidate, parse_requisitions
 from .sources import FileRef, Source
 
 logger = logging.getLogger(__name__)
 
-REQUISITIONS = "requisitions"
+REQUISITIONS = "settings/requisitions"
 CANDIDATES = "candidates/"
 DEFINITION = "settings/definition"
-KINDS = ("candidate", "requisitions", "definition")
+PEOPLE = "settings/people"
+KINDS = ("candidate", "requisitions", "definition", "people")
 
 
 @dataclass
@@ -28,6 +30,8 @@ def kind_of(ref: FileRef) -> str | None:
         return "requisitions"
     if ref.path == DEFINITION:
         return "definition"
+    if ref.path == PEOPLE:
+        return "people"
     if ref.path.startswith(CANDIDATES):
         return "candidate"
     return None
@@ -89,6 +93,7 @@ def _clear(db: sqlite3.Connection, file_id: str) -> None:
     db.execute("DELETE FROM candidates WHERE file_id = ?", (file_id,))
     db.execute("DELETE FROM requisitions WHERE file_id = ?", (file_id,))
     db.execute("DELETE FROM definition_items WHERE file_id = ?", (file_id,))
+    db.execute("DELETE FROM people WHERE file_id = ?", (file_id,))
 
 
 def _store(db: sqlite3.Connection, ref: FileRef, kind: str | None, book) -> None:
@@ -118,6 +123,8 @@ def _store(db: sqlite3.Connection, ref: FileRef, kind: str | None, book) -> None
             "INSERT INTO scores (email, origin, axis, value) VALUES (?, 'interview', ?, ?)",
             [(c.email, a, v) for a, v in c.scores().items()],
         )
+    elif kind == "people":
+        store_people(db, ref.id, parse_people(book))
     elif kind == "definition":
         store_definition(db, ref.id, parse_definition(book))
     elif kind == "requisitions":

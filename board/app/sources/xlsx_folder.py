@@ -2,6 +2,7 @@
 
 import datetime as dt
 from pathlib import Path
+from typing import Any
 
 from openpyxl import load_workbook
 
@@ -29,3 +30,13 @@ class XlsxFolderSource:
             return {ws.title: [list(row) for row in ws.iter_rows(values_only=True)] for ws in wb.worksheets}
         finally:
             wb.close()
+
+    def write(self, ref: FileRef, sheet: str, rows: list[list[Any]]) -> None:
+        wb = load_workbook(ref.id)
+        ws = wb[sheet] if sheet in wb.sheetnames else wb.create_sheet(sheet)
+        # 入力規則と列の幅は残し、値だけを入れ替える
+        if ws.max_row:
+            ws.delete_rows(1, ws.max_row)
+        for row in rows:
+            ws.append(row)
+        wb.save(ref.id)
