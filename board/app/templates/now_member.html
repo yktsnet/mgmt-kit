@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ person.name }} — 現在地 — board{% endblock %}
+{% block head %}<h1><a href="/now" class="back">現在地</a> / {{ person.name }}</h1>{% if usage %}<span class="note">{{ usage.since }} 〜 {{ usage.until }} の平日</span>{% endif %}{% endblock %}
+{% block main %}
+{% if row %}{% set nx = row.chosen or row.suggested %}
+<section class="frame">
+  <div class="head"><h2>評価</h2>
+    <span class="note">{% if row.period %}{{ row.period }} · Level {% if row.level %}L{{ row.level }}{% else %}-{% endif %} · 次に上げる軸 {% if nx %}{{ nx }} {{ AXIS_NAMES[nx] }}{% else %}-{% endif %}{% else %}まだ評価が無い{% endif %}</span>
+    {% if row.period %}<span class="actions"><a class="btn" href="/reviews/{{ row.period }}/{{ person.email }}">評価を開く</a></span>{% endif %}
+  </div>
+</section>
+{% endif %}
+{% if usage %}
+<section class="frame">
+  <div class="head"><h2>毎日の推移</h2><span class="note">縦軸は本人の値に合わせてあり、ほかの人とは目盛りが違う</span></div>
+  <div class="chart">{{ usage.chart|safe }}</div>
+</section>
+<section class="frame">
+  <div class="head"><h2>日ごと</h2></div>
+  <div class="scroll">
+  <table class="report wide">
+    <thead><tr><th>日付</th><th class="num">トークン量</th><th class="num">利用時間</th><th class="num">会話の数</th><th class="num">commit</th><th class="num">PR</th><th class="num">スキル</th></tr></thead>
+    <tbody>{% for d in usage.daily %}<tr><td class="nowrap">{{ d.label }}</td><td class="num">{{ d.tokens }}</td><td class="num">{{ d.minutes }}</td><td class="num">{{ d.sessions }}</td><td class="num">{{ d.commits }}</td><td class="num">{{ d.pull_requests }}</td><td class="num">{{ d.skills }}</td></tr>{% endfor %}</tbody>
+  </table>
+  </div>
+</section>
+{% else %}
+<section class="frame"><p class="empty">この人の Claude Code の利用状況のデータが無い。</p></section>
+{% endif %}
+{% endblock %}

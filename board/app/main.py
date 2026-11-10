@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import auth, config, settings as cfg_settings, views, workflow
+from . import auth, config, settings as cfg_settings, usage_report, views, workflow
 from .ladder import sync_ladder
 from .parse import AXES, SheetError
 from .sources.xlsx_folder import XlsxFolderSource
@@ -88,6 +88,10 @@ def _when(iso: str | None) -> str:
 
 class ActionBody(BaseModel):
     action: str
+
+
+class AxisBody(BaseModel):
+    axis: str
 
 
 class MemoBody(BaseModel):
@@ -198,6 +202,28 @@ def create_app(cfg: config.Config | None = None) -> FastAPI:
         if period not in ps:
             period = ps[-1] if ps else None
         return render(request, "reviews", periods=ps, period=period, groups=views.reviews(board.db, period))
+
+    @app.get("/now", response_class=HTMLResponse)
+    def now_page(request: Request):
+        board.refresh()
+        rows, together = views.now(board.db)
+        me = current_user(request)
+        return render(request, "now", rows=rows, together=together, report=usage_report.team(board.cfg.usage_dir),
+                      can_edit={r.email for r in rows if me and (me["role"] == "manager" or board.db.execute("SELECT 1 FROM people WHERE email = ? AND evaluator = ?", (r.email, me["email"])).fetchone())})
+
+    @app.get("/now/{email}", response_class=HTMLResponse)
+    def now_member(request: Request, email: str):
+        board.refresh()
+        person = board.db.execute("SELECT * FROM people WHERE email = ?", (email,)).fetchone()
+        if not person:
+            raise HTTPException(404)
+        rows, _ = views.now(board.db)
+        row = next((r for r in rows if r.email == email), None)
+        return render(request, "now_member", person=person, row=row, usage=usage_report.member(board.cfg.usage_dir, email))
+
+    @app.post("/api/growth/{period}/{email}")
+    def set_growth(request: Request, period: str, email: str, body: AxisBody):
+        return apply(lambda db: workflow.set_next_axis(db, current_user(request), email, period, body.axis))
 
     @app.get("/reviews/{period}/{email}", response_class=HTMLResponse)
     def review(request: Request, period: str, email: str):

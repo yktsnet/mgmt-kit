@@ -130,6 +130,15 @@ CREATE TABLE IF NOT EXISTS review_records (
   kind TEXT NOT NULL,
   body TEXT NOT NULL
 );
+-- 次に上げる1軸。最も低い軸から出し、Reviewer か Manager が変えたときだけここに残す
+CREATE TABLE IF NOT EXISTS growth_plans (
+  email TEXT NOT NULL,
+  period TEXT NOT NULL,
+  axis TEXT NOT NULL,
+  at TEXT NOT NULL,
+  by TEXT NOT NULL,
+  PRIMARY KEY (email, period)
+);
 """
 
 

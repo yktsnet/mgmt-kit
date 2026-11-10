@@ -11,7 +11,7 @@
   <div class="inner">
     <a class="brand" href="/">board</a>
     <a href="/reviews" class="tab {{ 'on' if page in ('reviews', 'review') }}">評価</a>
-    <span class="off" title="準備中">育成</span>
+    <a href="/now" class="tab {{ 'on' if page == 'now' }}">現在地</a>
     <span class="off" title="準備中">採用</span>
     <span class="spacer"></span>
     <a href="/settings" class="tab {{ 'on' if page == 'settings' }}" {% if page == 'settings' %}aria-current="page"{% endif %}>設定</a>
