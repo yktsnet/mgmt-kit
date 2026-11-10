@@ -36,9 +36,9 @@ CREATE TABLE IF NOT EXISTS scores (
   value INTEGER NOT NULL,
   PRIMARY KEY (email, origin, axis)
 );
+-- ここから下の設定（採用枠・定義・在籍者）はアプリが持つ。シートから作り直す写しではないので、同期では消さない
 CREATE TABLE IF NOT EXISTS requisitions (
   name TEXT PRIMARY KEY,
-  file_id TEXT NOT NULL REFERENCES files(id) ON DELETE CASCADE,
   count INTEGER NOT NULL,
   persona TEXT NOT NULL
 );
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS usage (
   skills INTEGER NOT NULL,
   issues_opened INTEGER NOT NULL
 );
--- 設定の定義。版ごとに5軸×5段階の細目を持つ。前の版も消さず、前の版で付けた評価をそのまま読めるようにする
+-- 定義。版ごとに5軸×5段階の細目を持つ。前の版も消さず、前の版で付けた評価をそのまま読めるようにする
 CREATE TABLE IF NOT EXISTS definition_items (
   version INTEGER NOT NULL,
   axis TEXT NOT NULL,
@@ -85,15 +85,15 @@ CREATE TABLE IF NOT EXISTS definition_items (
   key TEXT NOT NULL,
   text TEXT NOT NULL,
   evidence TEXT NOT NULL,
-  file_id TEXT NOT NULL REFERENCES files(id) ON DELETE CASCADE,
   PRIMARY KEY (version, axis, level, key)
 );
--- 在籍者の名簿と、評価する担当の割り当て。担当は名簿の中の誰か
+-- 在籍者の名簿と、評価する担当（Reviewer）の割り当て。担当は名簿の中の誰か
 CREATE TABLE IF NOT EXISTS people (
   email TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   evaluator TEXT,
-  file_id TEXT NOT NULL REFERENCES files(id) ON DELETE CASCADE
+  -- manager は評価を Approve できる
+  role TEXT NOT NULL DEFAULT 'member'
 );
 -- 評価1件（評価される人1人・期1つ）と、細目ごとの判定
 CREATE TABLE IF NOT EXISTS reviews (

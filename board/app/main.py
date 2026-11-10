@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import config, edit, views
+from . import config, settings as cfg_settings, views
 from .ladder import sync_ladder
 from .parse import AXES, SheetError
 from .sources.xlsx_folder import XlsxFolderSource
@@ -36,7 +36,10 @@ def make_source(cfg: config.Config):
 class Board:
     def __init__(self, cfg: config.Config) -> None:
         self.cfg = cfg
+        if cfg.db_path != ":memory:":
+            Path(cfg.db_path).parent.mkdir(parents=True, exist_ok=True)
         self.db = connect(cfg.db_path)
+        cfg_settings.seed(self.db, cfg.ladder_md, cfg.demo)
         self.source = make_source(cfg)
         self.lock = threading.Lock()
         self.synced_at = 0.0
@@ -73,9 +76,10 @@ class ItemBody(BaseModel):
     evidence: str = ""
 
 
-class EvaluatorBody(BaseModel):
+class PersonBody(BaseModel):
     email: str
-    evaluator: str = ""
+    evaluator: str | None = None
+    role: str | None = None
 
 
 class RequisitionBody(BaseModel):
@@ -134,38 +138,32 @@ def create_app(cfg: config.Config | None = None) -> FastAPI:
         )
 
     def apply(fn, *args):
-        """シートへ書き戻し、すぐ読み直す。直されていたら 409、決まりに合わなければ 400 を返す。
-
-        書く前には読み直さない。読み直すと、画面が読んだあとの変更を取り込んでしまい、食い違いに気づけない。
-        """
+        """設定を直す。決まりに合わなければ 400 を返す。"""
         try:
             with board.lock:
-                result = fn(board.source, board.db, *args)
-        except edit.Conflict:
-            return JSONResponse({"error": "シートがほかで直されています。画面を読み直してから、もう一度直してください。"}, 409)
+                result = fn(board.db, *args)
         except SheetError as e:
             return JSONResponse({"error": str(e)}, 400)
-        board.refresh(force=True)
         return {"ok": True, "result": result}
 
     @app.post("/api/definition/item")
     def save_item(body: ItemBody):
-        return apply(edit.save_item, body.version, body.axis, body.level, body.key, body.text, body.evidence)
+        return apply(cfg_settings.save_item, body.version, body.axis, body.level, body.key, body.text, body.evidence)
 
     @app.post("/api/definition/item/delete")
     def delete_item(body: ItemKey):
-        return apply(edit.delete_item, body.version, body.axis, body.level, body.key)
+        return apply(cfg_settings.delete_item, body.version, body.axis, body.level, body.key)
 
     @app.post("/api/definition/version")
     def new_version():
-        return apply(edit.new_version)
+        return apply(cfg_settings.new_version)
 
-    @app.post("/api/people/evaluator")
-    def set_evaluator(body: EvaluatorBody):
-        return apply(edit.set_evaluator, body.email, body.evaluator)
+    @app.post("/api/people")
+    def set_person(body: PersonBody):
+        return apply(cfg_settings.set_person, body.email, body.evaluator, body.role)
 
     @app.post("/api/requisitions")
     def set_requisition(body: RequisitionBody):
-        return apply(edit.set_requisition, body.name, body.count, body.target)
+        return apply(cfg_settings.set_requisition, body.name, body.count, body.target)
 
     return app

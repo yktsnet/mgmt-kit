@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""board のテンプレートと、架空の候補者・求める人材・在籍者の採点結果のダミーを作り直す。"""
+"""board のシートのテンプレートと、架空の候補者・評価・採点結果のダミーを作り直す。設定（在籍者・採用枠・定義）はアプリが持つので、ここでは作らない。"""
 
 import datetime as dt
 import shutil
@@ -13,6 +13,7 @@ from openpyxl.worksheet.datavalidation import DataValidation
 BOARD = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BOARD))
 LADDER_MD = BOARD.parent / "ladder" / "docs" / "ladder.md"
+from app.demo import EVALUATORS  # noqa: E402
 TEMPLATES = BOARD / "templates"
 DRIVE = BOARD / "samples" / "drive"
 LADDER = BOARD / "samples" / "ladder"
@@ -24,12 +25,6 @@ DOMAIN = "example.com"
 PROFILE_LABELS = ["氏名", "メール", "応募枠", "段階", "応募日", "経路"]
 INTERVIEW_HEADER = ["日付", "面接官", *AXES, "所見"]
 REQ_HEADER = ["枠", "人数", "参照ペルソナ", *AXES]
-
-# (枠, 人数, 参照ペルソナ, A〜E)。None は求めない軸
-REQUISITIONS = [
-    ("リード", 1, "L4", [4, 4, None, 3, None]),
-    ("開発", 2, "L3", [3, 3, None, 3, 2]),
-]
 
 # 段階ごとに面接の記録の量が変わるよう、選考の各段階に1人以上を置く。
 # (名前, 応募枠, 段階, 応募日, 経路, [(面接日, 面接官, A〜E, 所見)])
@@ -123,51 +118,30 @@ def candidate_book(profile: dict | None = None, interviews: list | None = None) 
     return wb
 
 
-DEF_HEADER = ["軸", "段階", "細目", "判定文", "Evidence"]
-
-
-def definition_book() -> Workbook:
-    """ladder.md の判定文を句点ごとに細目へ分けた初版（v1）。"""
-    from app.definition import from_ladder_md
-
-    wb = Workbook()
-    ws = wb.active
-    assert ws is not None
-    ws.title = "v1"
-    ws.append(DEF_HEADER)
-    for x in from_ladder_md(LADDER_MD.read_text(encoding="utf-8")):
-        ws.append([x.axis, f"L{x.level}", x.key, x.text, x.evidence])
-    for col, width in zip("ABCDE", (6, 6, 6, 72, 48)):
-        ws.column_dimensions[col].width = width
-    return wb
-
-
-# 在籍者と担当。usage のダミーと同じ10人で、3人の担当がそれぞれ3人ずつを評価する。alice-walker は未割り当て
-EVALUATORS = {
-    "emma-hughes": "alice-walker", "ben-carter": "alice-walker", "daniel-brooks": "alice-walker",
-    "chloe-evans": "emma-hughes", "felix-grant": "emma-hughes", "grace-turner": "emma-hughes",
-    "henry-ward": "daniel-brooks", "isla-morgan": "daniel-brooks", "jack-foster": "daniel-brooks",
-}
-
-
-def people_book(names: list[str]) -> Workbook:
-    wb = Workbook()
-    ws = wb.active
-    assert ws is not None
-    ws.title = "在籍者"
-    ws.append(["メール", "氏名", "担当"])
-    for name in names:
-        ev = EVALUATORS.get(name)
-        ws.append([f"{name}@{DOMAIN}", name.replace("-", " ").title(), f"{ev}@{DOMAIN}" if ev else None])
-    for col, width in zip("ABC", (30, 18, 30)):
-        ws.column_dimensions[col].width = width
-    return wb
-
-
 PERIOD_ID = "2026-H2"
 # 評価のダミー。STAFF の点から判定を作る。途中の人は C〜E を空欄のまま残し、未着手の人はファイルを置かない
 REVIEW_DONE = ["emma-hughes", "ben-carter", "chloe-evans", "grace-turner", "henry-ward"]
 REVIEW_PARTIAL = ["daniel-brooks", "felix-grant"]
+
+
+def review_book_template() -> Workbook:
+    """評価のテンプレート。Ladder の初版（v1）の細目を並べ、対象の値は空けておく。"""
+    from app.definition import from_ladder_md
+    from app.review import template_rows
+
+    wb = Workbook()
+    meta = wb.active
+    assert meta is not None
+    meta.title = "対象"
+    for label in ("メール", "期", "版", "Reviewer"):
+        meta.append([label, "v1" if label == "版" else None])
+    ws = wb.create_sheet("評価")
+    for row in template_rows(from_ladder_md(LADDER_MD.read_text(encoding="utf-8"))):
+        ws.append(row)
+    dv = DataValidation(type="list", formula1='"○,×,未観測"', allow_blank=True)
+    dv.add("E2:E500")
+    ws.add_data_validation(dv)
+    return wb
 
 
 def review_book(name: str, scores: list, partial: bool) -> Workbook:
@@ -209,18 +183,6 @@ def review_book(name: str, scores: list, partial: bool) -> Workbook:
     return wb
 
 
-def requisition_book(rows: list) -> Workbook:
-    wb = Workbook()
-    ws = wb.active
-    assert ws is not None
-    ws.title = "求める人材"
-    ws.append(REQ_HEADER)
-    for name, count, persona, target in rows:
-        ws.append([name, count, persona, *target])
-    ws.add_data_validation(score_validation("D2:H200"))
-    return wb
-
-
 def main() -> None:
     for d in (TEMPLATES, DRIVE, LADDER):
         shutil.rmtree(d, ignore_errors=True)
@@ -231,18 +193,12 @@ def main() -> None:
         (LADDER / f"{name}.md").write_text(scoresheet(name, scores), encoding="utf-8")
 
     candidate_book().save(TEMPLATES / "candidate.xlsx")
-    requisition_book([]).save(TEMPLATES / "requisitions.xlsx")
-    definition_book().save(TEMPLATES / "definition.xlsx")
-    (DRIVE / "settings").mkdir()
-    definition_book().save(DRIVE / "settings" / "definition.xlsx")
-    people_book([]).save(TEMPLATES / "people.xlsx")
-    people_book([name for name, _ in STAFF]).save(DRIVE / "settings" / "people.xlsx")
+    review_book_template().save(TEMPLATES / "review.xlsx")
     (DRIVE / "reviews" / PERIOD_ID).mkdir(parents=True)
     staff = dict(STAFF)
     for name in REVIEW_DONE + REVIEW_PARTIAL:
         review_book(name, staff[name], name in REVIEW_PARTIAL).save(DRIVE / "reviews" / PERIOD_ID / f"{name}.xlsx")
 
-    requisition_book(REQUISITIONS).save(DRIVE / "settings" / "requisitions.xlsx")
     for name, req, stage, applied, source, interviews in CANDIDATES:
         profile = {
             "氏名": name.replace("-", " ").title(),
@@ -253,7 +209,7 @@ def main() -> None:
             "経路": source,
         }
         candidate_book(profile, interviews).save(DRIVE / "candidates" / f"{name}.xlsx")
-    print(f"wrote {len(CANDIDATES)} candidates and {len(REQUISITIONS)} requisitions to {DRIVE.relative_to(BOARD)}")
+    print(f"wrote {len(CANDIDATES)} candidates and {len(REVIEW_DONE + REVIEW_PARTIAL)} reviews to {DRIVE.relative_to(BOARD)}")
     print(f"wrote {len(STAFF)} scoresheets to {LADDER.relative_to(BOARD)}")
 
 

@@ -1,22 +1,25 @@
 {% extends "base.html" %}
 {% block title %}設定 — board{% endblock %}
-{% block head %}<h1>設定</h1><span class="note">Ladder・Reviewer・採用枠。直すと Drive の <code>settings/</code> のシートに書き戻す</span>{% endblock %}
+{% block head %}<h1>設定</h1><span class="note">Ladder・Reviewer・採用枠。評価を回す前に決めておく</span>{% endblock %}
 {% block main %}
 {% set d = definition %}
 {% set latest = d.versions[-1] if d.versions else none %}
 
-<section class="frame" id="definition" data-editable="{{ 'yes' if d.version == latest and latest }}">
+{% set ladder_editable = d.version == latest and latest and not d.in_use %}
+<section class="frame" id="definition" data-editable="{{ 'yes' if ladder_editable }}">
   <div class="head">
     <h2>Ladder</h2>
-    {% if d.version %}<span class="note">v{{ d.version }} · {{ d.count }} items{% if d.version != latest %} · 過去の版（直せない）{% endif %}</span>{% endif %}
+    {% if d.version %}<span class="note">v{{ d.version }} · {{ d.count }} items{% if d.version != latest %} · 過去の版（直せない）{% elif d.in_use %} · 評価に使われている版。直すときは New version を作る{% endif %}</span>{% endif %}
     <span class="actions">
       {% if d.versions|length > 1 %}
       <span class="versions">{% for v in d.versions %}{% if v == d.version %}<b>v{{ v }}</b>{% else %}<a href="?v={{ v }}#definition">v{{ v }}</a>{% endif %}{% endfor %}</span>
       {% endif %}
-      {% if d.version == latest and latest %}
+      {% if ladder_editable %}
       <button class="btn edit-only" type="button" data-action="new-version">New version</button>
       <button class="btn read-only" type="button" data-action="edit">Edit</button>
       <button class="btn primary edit-only" type="button" data-action="done">Done</button>
+      {% elif d.version == latest and latest %}
+      <button class="btn" type="button" data-action="new-version">New version</button>
       {% endif %}
     </span>
   </div>
@@ -36,13 +39,13 @@
   </table>
   </div>
   {% else %}
-  <p class="empty"><code>settings/definition</code> が無いか、読めていない。</p>
+  <p class="empty">定義がまだ無い。</p>
   {% endif %}
 </section>
 
 <section class="frame" id="people" data-editable="{{ 'yes' if people }}">
   <div class="head">
-    <h2>Reviewer</h2><span class="note">誰が誰を評価するか。Reviewer 1人が、割り当てた人を評価する</span>
+    <h2>Reviewer</h2><span class="note">誰が誰を評価するか。Manager は評価を Approve できる</span>
     {% if people %}<span class="actions">
       <button class="btn read-only" type="button" data-action="edit">Edit</button>
       <button class="btn primary edit-only" type="button" data-action="done">Done</button>
@@ -51,10 +54,17 @@
   {% if people %}
   <div class="scroll">
   <table class="fit">
-    <thead><tr><th>Member</th><th>Reviewer</th><th>Reviews</th></tr></thead>
+    <thead><tr><th>Member</th><th>Role</th><th>Reviewer</th><th>Reviews</th></tr></thead>
     <tbody>{% for p in people %}
       <tr class="{{ 'unassigned' if not p.evaluator }}">
         <td class="nowrap">{{ p.name }}</td>
+        <td class="nowrap">
+          <span class="read-only">{{ 'Manager' if p.role == 'manager' else 'Member' }}</span>
+          <select class="edit-only" data-action="role" data-email="{{ p.email }}" aria-label="{{ p.name }} の Role">
+            <option value="member" {{ 'selected' if p.role != 'manager' }}>Member</option>
+            <option value="manager" {{ 'selected' if p.role == 'manager' }}>Manager</option>
+          </select>
+        </td>
         <td class="nowrap">
           <span class="read-only">{{ p.evaluator_name or 'Unassigned' }}</span>
           <select class="edit-only" data-action="evaluator" data-email="{{ p.email }}" aria-label="{{ p.name }} の Reviewer">
@@ -68,7 +78,7 @@
   </table>
   </div>
   {% else %}
-  <p class="empty"><code>settings/people</code> が無いか、読めていない。</p>
+  <p class="empty">在籍者がまだいない。</p>
   {% endif %}
 </section>
 
@@ -95,7 +105,7 @@
   </table>
   </div>
   {% else %}
-  <p class="empty"><code>settings/requisitions</code> が無いか、読めていない。</p>
+  <p class="empty">採用枠がまだ無い。</p>
   {% endif %}
 </section>
 {% endblock %}

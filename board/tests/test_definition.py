@@ -1,18 +1,13 @@
-import shutil
 from pathlib import Path
 
 import pytest
-from openpyxl import load_workbook
 
 from app.definition import from_ladder_md, latest_version, parse_definition, split_statement
 from app.parse import AXES, SheetError
-from app.sources.xlsx_folder import XlsxFolderSource
 from app.store import connect
-from app.sync import sync
 
 BOARD = Path(__file__).resolve().parent.parent
 LADDER_MD = BOARD.parent / "ladder" / "docs" / "ladder.md"
-SAMPLES = BOARD / "samples" / "drive"
 HEADER = ["軸", "段階", "細目", "判定文", "Evidence"]
 
 
@@ -60,28 +55,17 @@ def test_cell_without_items_is_an_error():
         parse_definition({"v1": rows})
 
 
-def test_sample_definition_syncs(tmp_path):
-    drive = tmp_path / "drive"
-    shutil.copytree(SAMPLES, drive)
+def test_seed_builds_v1_from_ladder_md_once():
+    from app.settings import seed
+
     db = connect(":memory:")
-    assert sync(XlsxFolderSource(drive), db).errors == {}
+    seed(db, LADDER_MD, demo=False)
     assert latest_version(db) == 1
     n = db.execute("SELECT count(*) FROM definition_items").fetchone()[0]
     assert n == len(from_ladder_md(LADDER_MD.read_text(encoding="utf-8")))
-
-    # 版を足すと、前の版も残る
-    path = drive / "settings" / "definition.xlsx"
-    wb = load_workbook(path)
-    v2 = wb.copy_worksheet(wb["v1"])
-    v2.title = "v2"
-    v2.append(["A", "L3", "c", "足した細目。", ""])
-    wb.save(path)
-    import os, time
-    t = time.time() + 10
-    os.utime(path, (t, t))
-    sync(XlsxFolderSource(drive), db)
-    assert latest_version(db) == 2
-    assert db.execute("SELECT count(*) FROM definition_items WHERE version = 1").fetchone()[0] == n
+    seed(db, LADDER_MD, demo=False)
+    assert db.execute("SELECT count(*) FROM definition_items").fetchone()[0] == n
+    assert db.execute("SELECT count(*) FROM people").fetchone()[0] == 0
 
 
 def test_old_evidence_header_is_still_read():

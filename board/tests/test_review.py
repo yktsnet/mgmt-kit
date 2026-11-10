@@ -7,6 +7,7 @@ from app.definition import Item
 from app.parse import SheetError
 from app.review import AxisResult, axis_result, parse_review, person_level, results_for, template_rows
 from app.sources.xlsx_folder import XlsxFolderSource
+from app.settings import seed
 from app.store import connect
 from app.sync import sync
 
@@ -84,6 +85,7 @@ def test_samples_sync_into_levels(tmp_path):
     drive = tmp_path / "drive"
     shutil.copytree(SAMPLES, drive)
     db = connect(":memory:")
+    seed(db, BOARD.parent / "ladder" / "docs" / "ladder.md", demo=True)
     assert sync(XlsxFolderSource(drive), db).errors == {}
     rows = {r["email"]: r["file_id"] for r in db.execute("SELECT email, file_id FROM reviews")}
     assert len(rows) == 7

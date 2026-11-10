@@ -20,6 +20,3 @@ class Source(Protocol):
 
     def read(self, ref: FileRef) -> Book: ...
 
-    def write(self, ref: FileRef, sheet: str, rows: list[list[Any]]) -> None:
-        """シート1枚の中身を rows で置き換える。シートが無ければ作る。"""
-        ...

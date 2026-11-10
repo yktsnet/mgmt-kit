@@ -15,6 +15,8 @@ class DefinitionView:
     # (段階, 軸) → 細目の並び
     cells: dict[tuple[int, str], list[sqlite3.Row]]
     count: int
+    # 評価が使っている版は直せない
+    in_use: bool
 
 
 def definition(db: sqlite3.Connection, version: int | None) -> DefinitionView:
@@ -25,7 +27,7 @@ def definition(db: sqlite3.Connection, version: int | None) -> DefinitionView:
     rows = db.execute("SELECT * FROM definition_items WHERE version = ? ORDER BY axis, level, key", (version,)).fetchall()
     for r in rows:
         cells[(r["level"], r["axis"])].append(r)
-    return DefinitionView(versions, version, cells, len(rows))
+    return DefinitionView(versions, version, cells, len(rows), version is not None and db.execute("SELECT 1 FROM reviews WHERE version = ? LIMIT 1", (version,)).fetchone() is not None)
 
 
 @dataclass
@@ -61,7 +63,7 @@ def errors(db: sqlite3.Connection) -> list[sqlite3.Row]:
 
 def people(db: sqlite3.Connection) -> list[sqlite3.Row]:
     return db.execute(
-        "SELECT p.email, p.name, p.evaluator, e.name AS evaluator_name FROM people p "
+        "SELECT p.email, p.name, p.evaluator, p.role, e.name AS evaluator_name FROM people p "
         "LEFT JOIN people e ON e.email = p.evaluator ORDER BY p.rowid"
     ).fetchall()
 

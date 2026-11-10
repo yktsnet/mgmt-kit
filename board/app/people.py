@@ -1,7 +1,4 @@
-"""設定の「在籍者」のシートを読む。在籍者の名簿と、評価する担当の割り当てを兼ねる。
-
-形の正本は docs/sheets.md の「在籍者」にある。
-"""
+"""在籍者の名簿と、評価する担当（Reviewer）の割り当て。アプリが持ち、parse_people は行の形で受けた名簿を確かめるのに使う。"""
 
 import sqlite3
 from dataclasses import dataclass
@@ -36,11 +33,3 @@ def parse_people(book: Book) -> list[Person]:
         if p.evaluator and p.evaluator not in known:
             raise SheetError(f"在籍者 {p.email}: 担当 {p.evaluator!r} is not in 在籍者")
     return people
-
-
-def store_people(db: sqlite3.Connection, file_id: str, people: list[Person]) -> None:
-    db.execute("DELETE FROM people")
-    db.executemany(
-        "INSERT INTO people (email, name, evaluator, file_id) VALUES (?, ?, ?, ?)",
-        [(p.email, p.name, p.evaluator or None, file_id) for p in people],
-    )

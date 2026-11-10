@@ -1,6 +1,6 @@
-"""設定の「定義」のシートを読む。5軸×5段階の各マスを細目に分け、版ごとに持つ。
+"""定義（Ladder）の細目。5軸×5段階の各マスを細目に分け、版ごとに持つ。
 
-形の正本は docs/sheets.md の「定義」にある。
+定義はアプリが持つ。parse_definition は、行の形で受けた定義を確かめるのに使う。
 """
 
 import re
@@ -67,14 +67,6 @@ def _version(title: str, rows: list) -> list[Item]:
     if missing:
         raise SheetError(f"定義 {title}: cells without 細目: {', '.join(missing)}")
     return items
-
-
-def store_definition(db: sqlite3.Connection, file_id: str, versions: dict[int, list[Item]]) -> None:
-    db.execute("DELETE FROM definition_items")
-    db.executemany(
-        "INSERT INTO definition_items (version, axis, level, key, text, evidence, file_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [(v, x.axis, x.level, x.key, x.text, x.evidence, file_id) for v, items in versions.items() for x in items],
-    )
 
 
 def latest_version(db: sqlite3.Connection) -> int | None:

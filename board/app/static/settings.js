@@ -1,4 +1,4 @@
-// 設定の画面。区画ごとに Edit で編集に切り替え、Done で読む表示に戻す。保存は API に送り、シートへの書き戻しはサーバーが行う
+// 設定の画面。区画ごとに Edit で編集に切り替え、Done で読む表示に戻す。設定はアプリが持ち、保存は API に送る
 (() => {
   const toast = document.getElementById("toast");
   let timer;
@@ -127,12 +127,13 @@
     }
   });
 
-  // ---- Reviewer
-  document.querySelectorAll('select[data-action="evaluator"]').forEach((sel) => {
+  // ---- Reviewer と Role
+  document.querySelectorAll('select[data-action="evaluator"], select[data-action="role"]').forEach((sel) => {
     const before = sel.value;
     sel.addEventListener("change", async () => {
+      const field = sel.dataset.action === "role" ? "role" : "evaluator";
       try {
-        await post("/api/people/evaluator", { email: sel.dataset.email, evaluator: sel.value });
+        await post("/api/people", { email: sel.dataset.email, [field]: sel.value });
         reload("Saved", "people");
       } catch (err) {
         sel.value = before;
