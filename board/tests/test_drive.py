@@ -1,6 +1,6 @@
 """DriveSource を、Drive API と Sheets API の応答の形を真似た偽のセッションで確かめる。"""
 
-from app.parse import parse_candidate
+from app.hiring import parse_candidate
 from app.sources.drive import FOLDER, SPREADSHEET, DriveSource
 from app.store import connect
 from app.sync import sync
@@ -35,12 +35,16 @@ CANDIDATE = {
         grid("候補者", [
             [cell("氏名"), cell("Ada")],
             [cell("メール"), cell("ada@example.com")],
-            [cell("段階"), cell("一次面接")],
+            [cell("版"), cell("v1")],
             [cell("応募日"), cell(46083, date=True)],
         ]),
         grid("面接", [
-            [cell("日付"), cell("A"), cell("B")],
-            [cell(46090, date=True), cell(3), {}],
+            [cell("回"), cell("日付")],
+            [cell(1), cell(46090, date=True)],
+        ]),
+        grid("面接1", [
+            [cell("軸"), cell("段階"), cell("細目"), cell("判定")],
+            [cell("A"), cell("L2"), cell("a"), cell("○")],
         ]),
     ]
 }
@@ -76,8 +80,9 @@ def test_lists_spreadsheets_in_subfolders_across_pages():
 def test_reads_grid_into_candidate():
     src = DriveSource("root", FakeSession())
     c = parse_candidate(src.read(src.list()[0]))
-    assert (c.email, c.stage, c.applied.isoformat()) == ("ada@example.com", "一次面接", "2026-03-02")
-    assert c.scores() == {"A": 3}
+    assert (c.email, c.version, c.applied.isoformat()) == ("ada@example.com", 1, "2026-03-02")
+    assert c.interviews[0].date.isoformat() == "2026-03-09"
+    assert c.interviews[0].verdicts == {"A-L2-a": ("○", "")}
 
 
 def test_sync_rereads_only_when_modified_time_changes():

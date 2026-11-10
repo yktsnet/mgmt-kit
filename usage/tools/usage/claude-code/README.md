@@ -10,6 +10,7 @@ seat の配分に使う。
 最終更新：2026-04-24 分まで
 
 図と表はどれも 2026-03-30 〜 2026-04-24 の平日の分で、期間のトークン量の多い順に並べる。
+図の破線は全員の1人あたりの5日平均（直前5平日の移動平均）、表の「平均」は全員の1人あたりの平均である。どちらも3人に満たないときは出さない。
 
 ### 標準化されたやり方
 
@@ -27,6 +28,7 @@ seat の配分に使う。
 | [grace-turner](members/grace-turner.md) | 26回 | `issue-work` 35%、`rework-review` 27%、`jp-writing` 12% |
 | [isla-morgan](members/isla-morgan.md) | 13回 | `issue-work` 38%、`rework-review` 15%、`md-writing` 15% |
 | [jack-foster](members/jack-foster.md) | 0回 | - |
+| **平均** | 16.1回 | - |
 
 ### 作業の量
 
@@ -46,6 +48,7 @@ seat の配分に使う。
 | grace-turner | 29 | 15 | 2929 | 298 | 35 | 29 |
 | isla-morgan | 7 | 5 | 657 | 98 | 18 | 26 |
 | jack-foster | 7 | 0 | 812 | 79 | 0 | 0 |
+| **平均** | 105.7 | 23.5 | 10158.6 | 1249.1 | 22.4 | 19.8 |
 
 ### 投入の量
 
@@ -65,6 +68,7 @@ seat の配分に使う。
 | grace-turner | 122分 | 648.6M | 4.6M | 20% | 2（medium, high） | 2（opus 5.5, sonnet 5.5） |
 | isla-morgan | 51分 | 282.7M | 3.2M | 15% | 2（low, medium） | 1（sonnet 5.5） |
 | jack-foster | 25分 | 121.7M | 5.8M | 29% | 1（medium） | 1（opus 5.5） |
+| **平均** | 564分 | 3012.1M | 10.8M | 25% | - | - |
 
 ### seat
 

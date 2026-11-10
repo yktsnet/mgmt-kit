@@ -16,7 +16,7 @@ class DefinitionView:
     # (段階, 軸) → 細目の並び
     cells: dict[tuple[int, str], list[sqlite3.Row]]
     count: int
-    # 評価が使っている版は直せない
+    # 評価か面接が使っている版は直せない
     in_use: bool
 
 
@@ -28,7 +28,9 @@ def definition(db: sqlite3.Connection, version: int | None) -> DefinitionView:
     rows = db.execute("SELECT * FROM definition_items WHERE version = ? ORDER BY axis, level, key", (version,)).fetchall()
     for r in rows:
         cells[(r["level"], r["axis"])].append(r)
-    return DefinitionView(versions, version, cells, len(rows), version is not None and db.execute("SELECT 1 FROM reviews WHERE version = ? LIMIT 1", (version,)).fetchone() is not None)
+    from .settings import version_in_use
+
+    return DefinitionView(versions, version, cells, len(rows), version is not None and version_in_use(db, version))
 
 
 @dataclass
@@ -64,7 +66,7 @@ def errors(db: sqlite3.Connection) -> list[sqlite3.Row]:
 
 def people(db: sqlite3.Connection) -> list[sqlite3.Row]:
     return db.execute(
-        "SELECT p.email, p.name, p.evaluator, p.role, e.name AS evaluator_name FROM people p "
+        "SELECT p.email, p.name, p.evaluator, p.role, p.hiring, e.name AS evaluator_name FROM people p "
         "LEFT JOIN people e ON e.email = p.evaluator ORDER BY p.rowid"
     ).fetchall()
 
@@ -112,12 +114,17 @@ def _row(db: sqlite3.Connection, person: sqlite3.Row, file_id: str | None, perio
     return ReviewRow(person["email"], person["name"], status, state, judged, total, results, person_level(results), file_id)
 
 
-def reviews(db: sqlite3.Connection, period: str | None) -> list[ReviewerGroup]:
+def reviews(db: sqlite3.Connection, period: str | None, me: sqlite3.Row | None) -> list[ReviewerGroup]:
+    """Reviewer ごとの一覧。me が見られない人の行は出さず、行の無い Reviewer の区画も出さない。"""
+    from .access import can_see_review
+
     files = {r["email"]: r["file_id"] for r in db.execute("SELECT email, file_id FROM reviews WHERE period = ?", (period,))}
     people = db.execute("SELECT * FROM people ORDER BY rowid").fetchall()
     by_email = {p["email"]: p for p in people}
     groups: dict[str | None, list[ReviewRow]] = {}
     for p in people:
+        if not can_see_review(db, me, p["email"], period):
+            continue
         groups.setdefault(p["evaluator"], []).append(_row(db, p, files.get(p["email"]), period))
     out = [ReviewerGroup(by_email.get(ev), rows) for ev, rows in groups.items() if ev]
     out.sort(key=lambda g: g.reviewer["name"] if g.reviewer else "")
@@ -177,15 +184,23 @@ def next_axis(levels: dict) -> str | None:
     return min(decided)[1] if decided else None
 
 
-def now(db: sqlite3.Connection) -> tuple[list[NowRow], list[tuple[str, list[str]]]]:
-    """在籍者ごとの次に上げる1軸と、L2 で止まっている人たち。利用状況の図と表は usage_report が作る。"""
-    people = db.execute("SELECT * FROM people ORDER BY rowid").fetchall()
-    names = {p["email"]: p["name"] for p in people}
+def now(db: sqlite3.Connection, me: sqlite3.Row | None) -> tuple[list[NowRow], list[tuple[str, list[str]]]]:
+    """me が見られる在籍者ごとの次に上げる1軸と、L2 で止まっている人たち。利用状況の図と表は usage_report が作る。
+
+    本人の行は出すが、評価が Approved になるまでは段階と次に上げる軸を空けておく。
+    """
+    from .access import can_see_person, can_see_review
+
+    everyone = db.execute("SELECT * FROM people ORDER BY rowid").fetchall()
+    names = {p["email"]: p["name"] for p in everyone}
+    people = [p for p in everyone if can_see_person(db, me, p["email"])]
 
     rows, stops = [], {}
     for p in people:
         rv = db.execute("SELECT * FROM reviews WHERE email = ? ORDER BY period DESC LIMIT 1", (p["email"],)).fetchone()
         levels, level, period = {}, None, None
+        if rv and not can_see_review(db, me, p["email"], rv["period"]):
+            rv = None
         if rv:
             r = _row(db, p, rv["file_id"], rv["period"])
             levels, level, period = r.levels, r.level, rv["period"]
@@ -205,3 +220,103 @@ def now(db: sqlite3.Connection) -> tuple[list[NowRow], list[tuple[str, list[str]
         ))
     together = sorted(((a, names) for a, names in stops.items() if len(names) >= 2), key=lambda x: (-len(x[1]), x[0]))
     return rows, together
+
+
+# ---- 採用
+
+
+@dataclass
+class CandidateRow:
+    email: str
+    name: str
+    requisition: str
+    stage: str
+    levels: dict
+    # 求める高さに届いていない軸
+    short: list[str]
+    # 未観測か判定の途中で、次の面接で聞く軸
+    ask: list[str]
+    interviews: int
+
+
+@dataclass
+class Opening:
+    requisition: sqlite3.Row | None
+    # 軸 → 求める高さ。求めない軸は入れない
+    target: dict[str, int]
+    rows: list[CandidateRow]
+    # 選考の段階 → 人数
+    counts: dict[str, int]
+
+
+def _gaps(levels: dict, target: dict[str, int]) -> tuple[list[str], list[str]]:
+    short, ask = [], []
+    for a in AXES:
+        r = levels.get(a)
+        if r is None or r.pending or r.level is None:
+            ask.append(a)
+        elif a in target and r.level < target[a]:
+            short.append(a)
+    return short, ask
+
+
+def _candidate_row(db: sqlite3.Connection, c: sqlite3.Row, target: dict[str, int]) -> CandidateRow:
+    from .hiring import current_stage, results
+
+    levels, _, _ = results(db, c["email"], c["version"])
+    short, ask = _gaps(levels, target)
+    n = db.execute("SELECT count(*) FROM interviews WHERE email = ?", (c["email"],)).fetchone()[0]
+    return CandidateRow(c["email"], c["name"], c["requisition"], current_stage(db, c["email"]), levels, short, ask, n)
+
+
+def _targets(db: sqlite3.Connection, name: str) -> dict[str, int]:
+    return dict(db.execute("SELECT axis, value FROM requisition_targets WHERE name = ?", (name,)).fetchall())
+
+
+def openings(db: sqlite3.Connection) -> list[Opening]:
+    """採用枠ごとに、求める高さと候補者の軸の段階を並べる。設定に無い枠の候補者は最後にまとめる。"""
+    from .hiring import STAGES
+
+    reqs = db.execute("SELECT * FROM requisitions ORDER BY rowid").fetchall()
+    out = []
+    names = {r["name"] for r in reqs}
+    for req in [*reqs, None]:
+        target = _targets(db, req["name"]) if req else {}
+        cs = db.execute(
+            "SELECT * FROM candidates WHERE requisition = ? ORDER BY applied, name" if req else
+            f"SELECT * FROM candidates WHERE requisition NOT IN ({','.join('?' * len(names))}) ORDER BY applied, name",
+            (req["name"],) if req else tuple(names),
+        ).fetchall()
+        if req is None and not cs:
+            continue
+        rows = sorted((_candidate_row(db, c, target) for c in cs), key=lambda r: STAGES.index(r.stage))
+        counts = {s: sum(1 for r in rows if r.stage == s) for s in STAGES}
+        out.append(Opening(req, target, rows, counts))
+    return out
+
+
+def candidate_detail(db: sqlite3.Connection, email: str):
+    from .hiring import latest_verdicts, moves, records, stage_of
+    from .review import JUDGED_LEVELS
+
+    c = db.execute("SELECT * FROM candidates WHERE email = ?", (email,)).fetchone()
+    if not c:
+        return None
+    req = db.execute("SELECT * FROM requisitions WHERE name = ?", (c["requisition"],)).fetchone()
+    target = _targets(db, c["requisition"]) if req else {}
+    row = _candidate_row(db, c, target)
+    interviews = db.execute(
+        "SELECT i.*, p.name AS interviewer_name, "
+        "(SELECT count(*) FROM interview_verdicts v WHERE v.email = i.email AND v.seq = i.seq) AS judged "
+        "FROM interviews i LEFT JOIN people p ON p.email = i.interviewer WHERE i.email = ? ORDER BY i.seq",
+        (email,),
+    ).fetchall()
+    latest = latest_verdicts(db, email)
+    cells: dict[tuple[int, str], list] = {}
+    for it in db.execute("SELECT * FROM definition_items WHERE version = ? ORDER BY key", (c["version"],)):
+        if it["level"] in JUDGED_LEVELS:
+            cells.setdefault((it["level"], it["axis"]), []).append((it, latest.get(f"{it['axis']}-L{it['level']}-{it['key']}")))
+    return {
+        "candidate": c, "requisition": req, "target": target, "row": row, "interviews": interviews,
+        "cells": cells, "stage": stage_of(db, email), "moves": moves(db, email), "records": records(db, email),
+    }

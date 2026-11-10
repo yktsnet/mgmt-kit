@@ -21,6 +21,7 @@ svg { --surface: #fcfcfb; --text: #0b0b0b; --muted: #52514e; --grid: #e4e3df; --
 .line { stroke-width: 2; fill: none; } .dash { stroke-dasharray: 6 4; }
 .dot { stroke: var(--surface); stroke-width: 2; }
 .other { stroke: var(--muted); fill: var(--muted); }
+.avg { stroke: var(--text); stroke-width: 2.5; fill: none; stroke-dasharray: 7 4; } .avg-label { fill: var(--text); font-size: 13px; font-weight: 700; }
 .limit { stroke: var(--alert); stroke-width: 1.5; stroke-dasharray: 4 3; } .limit-text { fill: var(--alert); font-size: 11px; }
 %(series)s
 </style>""" % {

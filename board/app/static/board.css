@@ -161,12 +161,9 @@ table.grid td { vertical-align: top; font-size: 13px; line-height: 1.55; border-
 .top .me .btn.link:hover { opacity: 1; }
 .role { display: inline-block; margin-left: 6px; font-size: 11px; padding: 0 6px; border-radius: 8px; border: 1px solid var(--gold); color: var(--gold); }
 .top .role { border-color: rgba(255, 255, 255, .5); color: #fff; }
-.signin { max-width: 520px; margin: 48px auto; padding: 0 16px; }
+.signin { max-width: 840px; margin: 48px auto; padding: 0 16px; }
 .signin .pad { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
 .signin .error { color: var(--crim); background: var(--crim-soft); padding: 8px 12px; border-radius: var(--radius); }
-.demo-login { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
-.demo-login .person { display: flex; align-items: center; justify-content: space-between; text-align: left; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); cursor: pointer; }
-.demo-login .person:hover { border-color: var(--teal); background: var(--teal-soft); }
 
 /* 評価の一覧。区画ごとに表を分けても列が揃うよう、列の幅を決め打ちにする */
 table.roster { table-layout: fixed; width: auto; }
@@ -234,3 +231,37 @@ table.report td.num, table.report th.num { width: 110px; }
 .chart svg { display: block; width: 100%; min-width: 560px; height: auto; }
 table.report.wide td:first-child, table.report.wide th:first-child { width: 180px; }
 .frame > .foot { margin: 0; padding: 8px 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink); border-left: 3px solid var(--gold); }
+
+/* 1人の評価のページで記録を出さないとき */
+.single { display: flex; flex-direction: column; gap: 16px; }
+
+/* 採用 */
+.funnel { list-style: none; display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+.funnel li { display: flex; align-items: baseline; gap: 6px; padding: 8px 16px; border-right: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+.funnel li .n { font-size: 18px; font-weight: 700; color: var(--navy); }
+.funnel li.zero .n { color: #B0B6C3; font-weight: 400; }
+.funnel li.closed { background: var(--bg); }
+table.roster.hiring th:nth-child(2) { width: 110px; }
+table.roster.hiring th:nth-child(3) { width: 64px; }
+table.roster.hiring th:nth-last-child(-n+2) { width: 120px; }
+tr.target td { background: var(--head); font-size: 12px; color: var(--navy); font-weight: 700; }
+tr.closed td { color: var(--muted); }
+td.ax.short .lvx, .summary .axis.short .val { color: var(--crim); }
+td.ax.short { background: var(--crim-soft); }
+.stage { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 10px; border: 1px solid var(--navy); color: var(--navy); white-space: nowrap; }
+tr.closed .stage { border-color: var(--line); color: var(--muted); }
+.summary .level .big.stage-big { font-size: 24px; }
+.summary .axis .want { font-size: 11px; color: var(--muted); }
+.summary .axis.short .want { color: var(--crim); }
+td.note { font-size: 13px; }
+
+/* 平均の行。人の行と見分けられるよう、上に線を引いて太字にする */
+tfoot tr.average td { border-top: 2px solid var(--line); background: var(--head); font-weight: 700; color: var(--navy); }
+.demo-login table { border: 1px solid var(--line); }
+.demo-login .person { font-size: 13px; padding: 4px 12px; }
+.demo-login .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.demo-login .chip { font-size: 13px; padding: 4px 12px; border: 1px solid var(--line); border-radius: var(--radius); white-space: nowrap; }
+/* 役割のうち、特別な Manager と Hiring にだけ色を付ける */
+.badge { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 10px; border-radius: 10px; }
+.badge.manager { background: var(--gold); color: #fff; }
+.badge.hiring { background: var(--teal); color: #fff; }

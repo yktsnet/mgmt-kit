@@ -20,6 +20,10 @@ README = ROOT / "README.md"
 SEATS = ROOT / "seats.json"
 ACCOUNTS = ROOT / "github.json"
 MEMBER_DAYS = 28
+# 平均の線をならす幅。平日だけを並べるので、5で1週間になる
+SMOOTH_DAYS = 5
+# 平均を出す最少の人数。2人だと、平均と自分の値から相手の値が割り出せる
+AVERAGE_MIN = 3
 TOP_SKILLS = 3
 # 利用上限は7日ごとに戻るので、seat は7日ごとの費用で見る。1週だけ休んだ人を誤って下げないよう、2週のうち多い方で決める
 SEAT_WEEKS = 2
@@ -85,13 +89,27 @@ def series_class(members: list[str], email: str) -> str:
     return f"s{i}" if i < len(SERIES) else "other"
 
 
-def team_chart(days: list[dt.date], by_date: dict[dt.date, dict], members: list[str], key: str, fmt) -> str:
+def average(days: list[dt.date], by_date: dict[dt.date, dict], members: list[str], key: str) -> list[float]:
+    """日ごとの全員の平均を、直前 SMOOTH_DAYS 日の移動平均でならす。1人ずつの値は日ごとの揺れが大きく、傾きが読めない。"""
+    daily = [sum(value(by_date[d], m, key) for m in members) / len(members) if d in by_date and members else 0 for d in days]
+    out = []
+    for i in range(len(daily)):
+        window = daily[max(0, i - SMOOTH_DAYS + 1): i + 1]
+        out.append(sum(window) / len(window))
+    return out
+
+
+def team_chart(days: list[dt.date], by_date: dict[dt.date, dict], members: list[str], key: str, fmt,
+               average_of: list[str] | None = None) -> str:
+    """members の線と、average_of（省略すると members）の平均の線を引く。"""
     # GitHub は画像を本文の幅まで縮めるが、広げはしない。ファイルツリーを開いた画面の本文の幅に合わせ、
     # 文字が縮まずに読める大きさで描く
     width, left, right, top, plot_h = 880, 64, 190, 24, 300
     plot_w = width - left - right
     height = top + plot_h + 44
-    peak = nice_max(max((value(by_date[d], m, key) for d in days if d in by_date for m in members), default=0))
+    pool = average_of if average_of is not None else members
+    avg = average(days, by_date, pool, key) if len(pool) >= AVERAGE_MIN else []
+    peak = nice_max(max([*(value(by_date[d], m, key) for d in days if d in by_date for m in members), *avg], default=0))
     step = plot_w / max(len(days) - 1, 1)
 
     def y_of(v: float) -> float:
@@ -114,13 +132,17 @@ def team_chart(days: list[dt.date], by_date: dict[dt.date, dict], members: list[
         body.append(f'<polyline class="line {cls}" style="fill: none" points="'
                     + " ".join(f"{x:.1f},{y:.1f}" for x, y in pts) + '"/>')
         body += [f'<circle class="dot {cls}" cx="{x:.1f}" cy="{y:.1f}" r="4"/>' for x, y in pts]
-        ends.append((m, cls, pts[-1][1]))
-    label_ys = spread([y for _, _, y in ends], 18, top, top + plot_h)
-    for (m, cls, y), ly in zip(ends, label_ys):
+        ends.append((escape(name(m)), f"line {cls}", "label", pts[-1][1]))
+    if avg:
+        pts = [(left + i * step, y_of(v)) for i, v in enumerate(avg)]
+        body.append('<polyline class="avg" points="' + " ".join(f"{x:.1f},{y:.1f}" for x, y in pts) + '"/>')
+        ends.append((f"{SMOOTH_DAYS}日平均", "avg", "avg-label", pts[-1][1]))
+    label_ys = spread([y for *_, y in ends], 18, top, top + plot_h)
+    for (text, line_cls, text_cls, _), ly in zip(ends, label_ys):
         x = left + plot_w + 12
         body += [
-            f'<line class="line {cls}" x1="{x}" y1="{ly:.1f}" x2="{x + 10}" y2="{ly:.1f}"/>',
-            f'<text class="label" x="{x + 16}" y="{ly + 4:.1f}">{escape(name(m))}</text>',
+            f'<line class="{line_cls}" x1="{x}" y1="{ly:.1f}" x2="{x + 10}" y2="{ly:.1f}"/>',
+            f'<text class="{text_cls}" x="{x + 16}" y="{ly + 4:.1f}">{text}</text>',
         ]
     return svg(width, height, body)
 
@@ -293,6 +315,49 @@ def skills_table(days: list[dt.date], by_date: dict[dt.date, dict], email: str) 
     return "\n".join(lines)
 
 
+def num(v: float) -> str:
+    return f"{v:.1f}".removesuffix(".0")
+
+
+def team_average(stats: dict[str, dict]) -> dict | None:
+    """全員の1人あたりの平均。Issue・スキル・使い方の内訳は、取れている人だけで割る。AVERAGE_MIN 人に満たなければ None。"""
+    us = list(stats.values())
+    if len(us) < AVERAGE_MIN:
+        return None
+    mean = lambda vals: sum(vals) / len(vals) if vals else None  # noqa: E731
+    issues = [u["issues"] for u in us if u.get("issues") is not None]
+    skills = [sum(u["skills"].values()) for u in us if u["skills"] is not None]
+    detailed = [u for u in us if u["detailed_days"]]
+    avg = {k: mean([u[k] for u in us]) or 0 for k in (
+        "tokens", "active_seconds", "sessions", "commits", "pull_requests", "lines_added", "lines_removed")}
+    avg.update({
+        "issues": (mean([i[0] for i in issues]), mean([i[1] for i in issues])) if issues else None,
+        "skills": mean(skills),
+        # 割合は人ごとの割合の平均ではなく、全員の合計で割る
+        "subagent": (sum(u["subagent"][0] for u in detailed), sum(u["subagent"][1] for u in detailed)) if detailed else None,
+    })
+    return avg
+
+
+def average_cells(avg: dict | None) -> dict[str, str] | None:
+    """平均の行の、表の列ごとの文字。MD と board で同じものを使う。"""
+    if avg is None:
+        return None
+    return {
+        "skills": "未取得" if avg["skills"] is None else f"{num(avg['skills'])}回",
+        "commits": num(avg["commits"]),
+        "pull_requests": num(avg["pull_requests"]),
+        "lines_added": num(avg["lines_added"]),
+        "lines_removed": num(avg["lines_removed"]),
+        "issues_opened": "-" if avg["issues"] is None else num(avg["issues"][0]),
+        "issues_closed": "-" if avg["issues"] is None else num(avg["issues"][1]),
+        "minutes": minutes(avg["active_seconds"]),
+        "tokens": compact(avg["tokens"]),
+        "per_session": compact(avg["tokens"] / avg["sessions"]) if avg["sessions"] else "-",
+        "subagent": "-" if avg["subagent"] is None else ratio(*avg["subagent"]),
+    }
+
+
 def standard_table(stats: dict[str, dict]) -> str:
     lines = [
         "| メンバー | スキルの回数 | よく使ったスキル |",
@@ -304,6 +369,8 @@ def standard_table(stats: dict[str, dict]) -> str:
         top = sorted(skills.items(), key=lambda kv: -kv[1])[:TOP_SKILLS]
         names = "、".join(f"`{s}` {n / whole:.0%}" for s, n in top) if whole else "-"
         lines.append(f"| [{name(m)}](members/{name(m)}.md) | {skill_total(u)} | {names} |")
+    if a := average_cells(team_average(stats)):
+        lines.append(f"| **平均** | {a['skills']} | - |")
     return "\n".join(lines)
 
 
@@ -318,6 +385,9 @@ def work_table(stats: dict[str, dict]) -> str:
             f"| {u['lines_added']} | {u['lines_removed']} "
             f"| {issue_cell(u['issues'], 0)} | {issue_cell(u['issues'], 1)} |"
         )
+    if a := average_cells(team_average(stats)):
+        lines.append(f"| **平均** | {a['commits']} | {a['pull_requests']} | {a['lines_added']} | {a['lines_removed']} "
+                     f"| {a['issues_opened']} | {a['issues_closed']} |")
     return "\n".join(lines)
 
 
@@ -334,6 +404,8 @@ def input_table(stats: dict[str, dict]) -> str:
             f"| {name(m)} | {minutes(u['active_seconds'])} | {compact(u['tokens'])} "
             f"| {compact(u['tokens'] / u['sessions']) if u['sessions'] else '-'} | {detail} |"
         )
+    if a := average_cells(team_average(stats)):
+        lines.append(f"| **平均** | {a['minutes']} | {a['tokens']} | {a['per_session']} | {a['subagent']} | - | - |")
     return "\n".join(lines)
 
 
@@ -524,6 +596,8 @@ def main() -> None:
         f"最終更新：{days[-1]['date']} 分まで",
         "",
         f"図と表はどれも {span[0]} 〜 {span[-1]} の平日の分で、期間のトークン量の多い順に並べる。",
+        f"図の破線は全員の1人あたりの{SMOOTH_DAYS}日平均（直前{SMOOTH_DAYS}平日の移動平均）、表の「平均」は全員の1人あたりの平均である。"
+        f"どちらも{AVERAGE_MIN}人に満たないときは出さない。",
         "",
         "### 標準化されたやり方",
         "",

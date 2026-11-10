@@ -12,6 +12,7 @@ svg { --surface: #fcfcfb; --text: #0b0b0b; --muted: #52514e; --grid: #e4e3df; --
 .line { stroke-width: 2; fill: none; } .dash { stroke-dasharray: 6 4; }
 .dot { stroke: var(--surface); stroke-width: 2; }
 .other { stroke: var(--muted); fill: var(--muted); }
+.avg { stroke: var(--text); stroke-width: 2.5; fill: none; stroke-dasharray: 7 4; } .avg-label { fill: var(--text); font-size: 13px; font-weight: 700; }
 .limit { stroke: var(--alert); stroke-width: 1.5; stroke-dasharray: 4 3; } .limit-text { fill: var(--alert); font-size: 11px; }
 .s0 { stroke: var(--s0); fill: var(--s0); }
 .s1 { stroke: var(--s1); fill: var(--s1); }
@@ -263,12 +264,13 @@ svg { --surface: #fcfcfb; --text: #0b0b0b; --muted: #52514e; --grid: #e4e3df; --
 <circle class="dot other" cx="624.1" cy="324.0" r="4"/>
 <circle class="dot other" cx="657.1" cy="324.0" r="4"/>
 <circle class="dot other" cx="690.0" cy="324.0" r="4"/>
+<polyline class="avg" points="64.0,270.9 96.9,263.0 129.9,264.7 162.8,270.6 195.8,273.0 228.7,273.1 261.7,276.5 294.6,272.2 327.6,264.6 360.5,266.0 393.5,264.2 426.4,265.6 459.4,268.0 492.3,272.1 525.3,267.0 558.2,268.5 591.2,264.8 624.1,266.6 657.1,266.9 690.0,264.1"/>
 <line class="line s0" x1="702" y1="118.3" x2="712" y2="118.3"/>
 <text class="label" x="718" y="122.3">alice-walker</text>
 <line class="line s1" x1="702" y1="140.4" x2="712" y2="140.4"/>
 <text class="label" x="718" y="144.4">ben-carter</text>
-<line class="line s2" x1="702" y1="216.0" x2="712" y2="216.0"/>
-<text class="label" x="718" y="220.0">chloe-evans</text>
+<line class="line s2" x1="702" y1="198.0" x2="712" y2="198.0"/>
+<text class="label" x="718" y="202.0">chloe-evans</text>
 <line class="line s3" x1="702" y1="252.0" x2="712" y2="252.0"/>
 <text class="label" x="718" y="256.0">daniel-brooks</text>
 <line class="line s4" x1="702" y1="270.0" x2="712" y2="270.0"/>
@@ -277,10 +279,12 @@ svg { --surface: #fcfcfb; --text: #0b0b0b; --muted: #52514e; --grid: #e4e3df; --
 <text class="label" x="718" y="238.0">felix-grant</text>
 <line class="line s6" x1="702" y1="288.0" x2="712" y2="288.0"/>
 <text class="label" x="718" y="292.0">grace-turner</text>
-<line class="line s7" x1="702" y1="198.0" x2="712" y2="198.0"/>
-<text class="label" x="718" y="202.0">henry-ward</text>
+<line class="line s7" x1="702" y1="180.0" x2="712" y2="180.0"/>
+<text class="label" x="718" y="184.0">henry-ward</text>
 <line class="line other" x1="702" y1="306.0" x2="712" y2="306.0"/>
 <text class="label" x="718" y="310.0">isla-morgan</text>
 <line class="line other" x1="702" y1="324.0" x2="712" y2="324.0"/>
 <text class="label" x="718" y="328.0">jack-foster</text>
+<line class="avg" x1="702" y1="216.0" x2="712" y2="216.0"/>
+<text class="avg-label" x="718" y="220.0">5日平均</text>
 </svg>

@@ -34,8 +34,11 @@ def _days(usage_dir: Path) -> list[dict]:
     return out
 
 
-def team(usage_dir: Path) -> dict | None:
-    """全員の図と、量と成果・使い方の表の行。トークン量の多い順に並べる（MD と同じ）。"""
+def team(usage_dir: Path, only: set[str] | None = None) -> dict | None:
+    """全員の図と、量と成果・使い方の表の行。トークン量の多い順に並べる（MD と同じ）。
+
+    only を渡すと、線と行をその人たちだけにする。平均の線は only によらず全員から出す。
+    """
     r = _render(usage_dir)
     days = _days(usage_dir)
     if not r or not days:
@@ -44,7 +47,8 @@ def team(usage_dir: Path) -> dict | None:
     if not span:
         return None
     accounts = json.loads((usage_dir / "github.json").read_text()) if (usage_dir / "github.json").is_file() else {}
-    members = sorted({m for d in span if d in by_date for m in by_date[d]["members"]})
+    everyone = sorted({m for d in span if d in by_date for m in by_date[d]["members"]})
+    members = everyone if only is None else [m for m in everyone if m in only]
     rows = []
     for m in members:
         u = r.usage(span, by_date, m)
@@ -70,11 +74,14 @@ def team(usage_dir: Path) -> dict | None:
             "per_session": r.compact(u["tokens"] / u["sessions"]) if u["sessions"] else "-",
         })
     rows.sort(key=lambda x: -x["tokens"])
+    stats = {m: {**r.usage(span, by_date, m), "issues": r.issue_counts(span, by_date, accounts.get(r.name(m)))} for m in everyone}
     return {
+        # 平均は全員から出す。人数が少ないと None になり、平均の行を出さない
+        "average": r.average_cells(r.team_average(stats)),
         "since": span[0].isoformat(),
         "until": span[-1].isoformat(),
-        "tokens_chart": r.team_chart(span, by_date, members, "tokens", r.compact),
-        "commits_chart": r.team_chart(span, by_date, members, "commits", lambda v: f"{v:g}"),
+        "tokens_chart": r.team_chart(span, by_date, members, "tokens", r.compact, average_of=everyone),
+        "commits_chart": r.team_chart(span, by_date, members, "commits", lambda v: f"{v:g}", average_of=everyone),
         "rows": rows,
     }
 

@@ -15,13 +15,21 @@
     <div class="pad">
       {% if error %}<p class="error">{{ error }}</p>{% endif %}
       {% if demo %}
-      <p class="muted">デモでは Google を通らず、在籍者から1人を選んでログインする。</p>
+      <p class="muted">デモでは Google を通らず、在籍者から1人を選んでログインする。Manager はすべてを見られる。Member は、Reviewer として担当する人の評価と、Approved になった自分の評価だけを見られる。採用は、設定で Hiring を付けた人と Manager が見られる。</p>
       <form method="post" action="/auth/demo" class="demo-login">
-        {% for p in people %}
-        <button class="person" type="submit" name="email" value="{{ p.email }}">
-          <span>{{ p.name }}</span>{% if p.role == 'manager' %}<span class="role">Manager</span>{% endif %}
-        </button>
-        {% endfor %}
+        <div class="scroll">
+        <table>
+          <thead><tr><th>ログインする人</th><th>役割</th><th>見られるタブ</th><th>Reviewer として担当する人</th></tr></thead>
+          <tbody>{% for p in people %}
+            <tr>
+              <td class="nowrap"><button class="btn person" type="submit" name="email" value="{{ p.email }}">{{ p.name }}</button></td>
+              <td class="nowrap">{% if p.role == 'manager' %}<span class="badge manager">Manager</span>{% elif p.hiring %}<span class="badge hiring">Hiring</span>{% else %}<span class="muted">Member</span>{% endif %}</td>
+              <td class="nowrap">{{ p.tabs|join('・') }}</td>
+              <td>{% if p.role == 'manager' %}全員（評価を Approve できる）{% elif p.reviewees %}<span class="chips">{% for n in p.reviewees %}<span class="chip">{{ n }}</span>{% endfor %}</span>{% else %}<span class="muted">-</span>{% endif %}</td>
+            </tr>
+          {% endfor %}</tbody>
+        </table>
+        </div>
       </form>
       {% elif client_id %}
       <div id="g_id_onload" data-client_id="{{ client_id }}" data-login_uri="/auth/google" data-ux_mode="redirect" data-hd="{{ domain }}"></div>

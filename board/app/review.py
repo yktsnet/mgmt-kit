@@ -37,21 +37,35 @@ def parse_review(book: Book) -> Review:
     email = _text(meta.get("メール")).lower()
     if not email:
         raise SheetError("対象: メール is empty")
-    version_text = _text(meta.get("版")).lower().removeprefix("v")
-    if not version_text.isdigit():
-        raise SheetError(f"対象: 版 must be v1, v2, ..., got {meta.get('版')!r}")
-    review = Review(email, _text(meta.get("期")), int(version_text), _text(meta.get("Reviewer")).lower())
+    try:
+        version = parse_version(meta.get("版"))
+    except SheetError as e:
+        raise SheetError(f"対象: {e}") from None
+    review = Review(email, _text(meta.get("期")), version, _text(meta.get("Reviewer")).lower())
+    review.verdicts = parse_verdicts(_sheet(book, "評価"), "評価")
+    return review
 
-    for i, r in enumerate(_table(_sheet(book, "評価")), start=2):
+
+def parse_version(value) -> int:
+    text = _text(value).lower().removeprefix("v")
+    if not text.isdigit():
+        raise SheetError(f"版 must be v1, v2, ..., got {value!r}")
+    return int(text)
+
+
+def parse_verdicts(rows: list, sheet: str) -> dict[str, tuple[str, str]]:
+    """1行に細目1つの表から、判定の入った細目だけを返す。評価のシートと面接のシートで同じ形を使う。"""
+    out = {}
+    for i, r in enumerate(_table(rows), start=2):
         raw = _text(r.get("判定"))
         if not raw:
             continue
         verdict = ALIASES.get(raw.lower())
         if not verdict:
-            raise SheetError(f"評価 row {i}: 判定 must be ○, × or 未観測, got {raw!r}")
+            raise SheetError(f"{sheet} row {i}: 判定 must be ○, × or 未観測, got {raw!r}")
         item_id = f"{_text(r.get('軸')).upper()}-L{_text(r.get('段階')).upper().removeprefix('L')}-{_text(r.get('細目')).lower()}"
-        review.verdicts[item_id] = (verdict, _text(r.get("根拠")))
-    return review
+        out[item_id] = (verdict, _text(r.get("根拠")))
+    return out
 
 
 @dataclass
@@ -115,10 +129,14 @@ def store_review(db: sqlite3.Connection, file_id: str, review: Review) -> None:
 def results_for(db: sqlite3.Connection, file_id: str) -> tuple[dict[str, AxisResult], int, int]:
     """評価1件の、軸ごとの結果と、判定した細目の数と、判定する細目の数。"""
     r = db.execute("SELECT version FROM reviews WHERE file_id = ?", (file_id,)).fetchone()
-    rows = db.execute("SELECT * FROM definition_items WHERE version = ?", (r["version"],)).fetchall()
-    if not rows:
-        raise SheetError(f"definition v{r['version']} not found")
-    items = [Item(x["axis"], x["level"], x["key"], x["text"], x["evidence"]) for x in rows]
     verdicts = dict(db.execute("SELECT item, verdict FROM verdicts WHERE file_id = ?", (file_id,)).fetchall())
+    return results_of(db, r["version"], verdicts)
+
+
+def results_of(db: sqlite3.Connection, version: int, verdicts: dict[str, str]) -> tuple[dict[str, AxisResult], int, int]:
+    rows = db.execute("SELECT * FROM definition_items WHERE version = ?", (version,)).fetchall()
+    if not rows:
+        raise SheetError(f"definition v{version} not found")
+    items = [Item(x["axis"], x["level"], x["key"], x["text"], x["evidence"]) for x in rows]
     judged_ids = {x.id for x in items if x.level in JUDGED_LEVELS}
     return {a: axis_result(items, verdicts, a) for a in AXES}, len(judged_ids & verdicts.keys()), len(judged_ids)

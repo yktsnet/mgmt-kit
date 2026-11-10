@@ -37,7 +37,7 @@ def test_reviews_grouped_by_reviewer_with_status(client):
 
 def test_review_detail_shows_levels_and_verdicts(client):
     html = client.get("/reviews/2026-H2/ben-carter@example.com").text
-    assert "Reviewer Alice Walker" in html
+    assert "Reviewer 🐊 Alice Walker" in html
     assert '<span class="big">L1</span>' in html
     assert "item verdict fail" in html and "PR と Issue を読んで確かめた" in html
 

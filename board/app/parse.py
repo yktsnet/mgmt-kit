@@ -1,47 +1,17 @@
-"""読み込み口が返したシートを、見出しの文字で読んで候補者にする。
-
-候補者のシートの形の正本は docs/sheets.md にある。parse_requisitions は、設定の採用枠を直すときの確かめに使う。
-"""
+"""シートを見出しの文字で読むための部品。parse_requisitions は、設定の採用枠を直すときの確かめに使う。"""
 
 import datetime as dt
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from .sources import Book
 
 AXES = ("A", "B", "C", "D", "E")
-STAGES = ("応募", "書類選考", "一次面接", "最終面接", "内定", "入社", "不採用", "辞退")
 SHEETS_EPOCH = dt.date(1899, 12, 30)
 
 
 class SheetError(ValueError):
     pass
-
-
-@dataclass
-class Interview:
-    date: dt.date | None
-    interviewer: str
-    scores: dict[str, int]
-    note: str
-
-
-@dataclass
-class Candidate:
-    email: str
-    name: str
-    requisition: str
-    stage: str
-    applied: dt.date | None
-    source: str
-    interviews: list[Interview] = field(default_factory=list)
-
-    def scores(self) -> dict[str, int]:
-        """軸ごとに、点の入っている最も新しい面接の値。点の無い軸は入れない（未観測）。"""
-        out: dict[str, int] = {}
-        for iv in sorted(self.interviews, key=lambda i: i.date or dt.date.min):
-            out.update(iv.scores)
-        return out
 
 
 @dataclass
@@ -100,34 +70,6 @@ def _table(rows: list[list[Any]]) -> list[dict[str, Any]]:
             continue
         out.append({h: (row[i] if i < len(row) else None) for i, h in enumerate(header) if h})
     return out
-
-
-def parse_candidate(book: Book) -> Candidate:
-    profile = {}
-    for row in _sheet(book, "候補者"):
-        if row and _text(row[0]):
-            profile[_text(row[0])] = row[1] if len(row) > 1 else None
-    email = _text(profile.get("メール")).lower()
-    if not email:
-        raise SheetError("候補者: メール is empty")
-    stage = _text(profile.get("段階"))
-    if stage and stage not in STAGES:
-        raise SheetError(f"候補者: unknown 段階 {stage!r}")
-
-    interviews = []
-    for i, r in enumerate(_table(book.get("面接", [])), start=2):
-        scores = {a: s for a in AXES if (s := to_score(r.get(a), f"面接 row {i} {a}")) is not None}
-        interviews.append(Interview(to_date(r.get("日付")), _text(r.get("面接官")).lower(), scores, _text(r.get("所見"))))
-
-    return Candidate(
-        email=email,
-        name=_text(profile.get("氏名")) or email,
-        requisition=_text(profile.get("応募枠")),
-        stage=stage,
-        applied=to_date(profile.get("応募日")),
-        source=_text(profile.get("経路")),
-        interviews=interviews,
-    )
 
 
 def parse_requisitions(book: Book) -> list[Requisition]:

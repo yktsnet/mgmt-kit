@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "_level.html" import axis %}
+{% block title %}採用 — board{% endblock %}
+{% block head %}<h1>採用</h1><span class="note">採用枠ごとに、求める高さと候補者の軸の段階を並べる。面接の判定は Drive の <code>candidates/</code> のシートに書き、選考の段階はここで進める</span>{% endblock %}
+{% block main %}
+{% for o in openings %}
+<section class="frame">
+  <div class="head">
+    <h2>{% if o.requisition %}{{ o.requisition.name }}{% else %}設定に無い採用枠{% endif %}</h2>
+    <span class="note">{% if o.requisition %}{{ o.requisition.count }} 人 · 参照ペルソナ {{ o.requisition.persona }}{% else %}候補者のシートの応募枠が、設定の採用枠のどれとも合っていない{% endif %}</span>
+  </div>
+  <ol class="funnel">{% for s in stages %}<li class="{{ 'zero' if not o.counts[s] }}{{ ' closed' if s in ('不採用', '辞退') }}"><span class="n">{{ o.counts[s] }}</span><span class="s">{{ s }}</span></li>{% endfor %}</ol>
+  <div class="scroll">
+  <table class="roster hiring">
+    <thead><tr><th>Candidate</th><th>Stage</th><th class="num">面接</th>{% for a in AXES %}<th class="ax" title="{{ AXIS_NAMES[a] }}">{{ a }}</th>{% endfor %}<th>届いていない</th><th>次に聞く</th></tr></thead>
+    <tbody>
+      {% if o.requisition %}<tr class="target"><td>求める高さ</td><td></td><td></td>{% for a in AXES %}<td class="ax">{% if a in o.target %}<span class="lv">L{{ o.target[a] }}</span>{% else %}<span class="lvx none" title="求めない">·</span>{% endif %}</td>{% endfor %}<td></td><td></td></tr>{% endif %}
+      {% for r in o.rows %}
+      <tr class="{{ 'closed' if r.stage in ('不採用', '辞退') }}">
+        <td class="nowrap"><a href="/hiring/{{ r.email }}">{{ r.name }}</a></td>
+        <td><span class="stage">{{ r.stage }}</span></td>
+        <td class="num muted">{{ r.interviews or '' }}</td>
+        {% for a in AXES %}<td class="ax {{ 'short' if a in r.short }}">{{ axis(r.levels.get(a)) }}</td>{% endfor %}
+        <td class="nowrap">{% if r.short %}{{ r.short|join(' ') }}{% elif r.interviews %}<span class="muted">-</span>{% endif %}</td>
+        <td class="nowrap">{% if not r.interviews %}<span class="muted">面接前</span>{% elif r.ask %}{{ r.ask|join(' ') }}{% else %}<span class="muted">-</span>{% endif %}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="10" class="muted">まだ候補者がいない。</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% else %}
+<section class="frame"><p class="empty">採用枠が設定に無い。</p></section>
+{% endfor %}
+<p class="legend">軸の段階は、面接ごとの細目の判定を、細目ごとに最も新しい面接で合わせて評価と同じ決め方で出す。赤は求める高さに届いていない軸。… は判定の途中、— は未観測。次に聞くのは、未観測か判定の途中の軸</p>
+{% endblock %}

@@ -9,7 +9,7 @@
 <section class="frame" id="definition" data-editable="{{ 'yes' if ladder_editable }}">
   <div class="head">
     <h2>Ladder</h2>
-    {% if d.version %}<span class="note">v{{ d.version }} · {{ d.count }} items{% if d.version != latest %} · 過去の版（直せない）{% elif d.in_use %} · 評価に使われている版。直すときは New version を作る{% endif %}</span>{% endif %}
+    {% if d.version %}<span class="note">v{{ d.version }} · {{ d.count }} items{% if d.version != latest %} · 過去の版（直せない）{% elif d.in_use %} · 評価か面接に使われている版。直すときは New version を作る{% endif %}</span>{% endif %}
     <span class="actions">
       {% if d.versions|length > 1 %}
       <span class="versions">{% for v in d.versions %}{% if v == d.version %}<b>v{{ v }}</b>{% else %}<a href="?v={{ v }}#definition">v{{ v }}</a>{% endif %}{% endfor %}</span>
@@ -45,7 +45,7 @@
 
 <section class="frame" id="people" data-editable="{{ 'yes' if people }}">
   <div class="head">
-    <h2>Reviewer</h2><span class="note">誰が誰を評価するか。Manager は評価を Approve できる</span>
+    <h2>Reviewer</h2><span class="note">誰が誰を評価するか。Manager は評価を Approve でき、すべてを見られる。Hiring を付けた人は採用のタブを見られる</span>
     {% if people %}<span class="actions">
       <button class="btn read-only" type="button" data-action="edit">Edit</button>
       <button class="btn primary edit-only" type="button" data-action="done">Done</button>
@@ -54,7 +54,7 @@
   {% if people %}
   <div class="scroll">
   <table class="fit">
-    <thead><tr><th>Member</th><th>Role</th><th>Reviewer</th><th>Reviews</th></tr></thead>
+    <thead><tr><th>Member</th><th>Role</th><th>Hiring</th><th>Reviewer</th><th>Reviews</th></tr></thead>
     <tbody>{% for p in people %}
       <tr class="{{ 'unassigned' if not p.evaluator }}">
         <td class="nowrap">{{ p.name }}</td>
@@ -64,6 +64,11 @@
             <option value="member" {{ 'selected' if p.role != 'manager' }}>Member</option>
             <option value="manager" {{ 'selected' if p.role == 'manager' }}>Manager</option>
           </select>
+        </td>
+        <td class="nowrap">
+          {% if p.role == 'manager' %}<span class="muted">Manager</span>
+          {% else %}<span class="read-only">{{ '✓' if p.hiring else '' }}</span>
+          <input class="edit-only" type="checkbox" data-action="hiring" data-email="{{ p.email }}" {{ 'checked' if p.hiring }} aria-label="{{ p.name }} が採用を見られる">{% endif %}
         </td>
         <td class="nowrap">
           <span class="read-only">{{ p.evaluator_name or 'Unassigned' }}</span>

@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS candidates (
   file_id TEXT NOT NULL REFERENCES files(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   requisition TEXT NOT NULL,
-  stage TEXT NOT NULL,
+  -- 面接の判定が使う Ladder の版
+  version INTEGER NOT NULL,
   applied TEXT,
   source TEXT NOT NULL
 );
@@ -30,7 +31,31 @@ CREATE TABLE IF NOT EXISTS interviews (
   note TEXT NOT NULL,
   PRIMARY KEY (email, seq)
 );
--- 人と軸ごとの点。出どころ（interview・ladder）を分けて持ち、画面で並べる
+CREATE TABLE IF NOT EXISTS interview_verdicts (
+  email TEXT NOT NULL,
+  seq INTEGER NOT NULL,
+  item TEXT NOT NULL,
+  verdict TEXT NOT NULL,
+  note TEXT NOT NULL,
+  PRIMARY KEY (email, seq, item),
+  FOREIGN KEY (email, seq) REFERENCES interviews(email, seq) ON DELETE CASCADE
+);
+-- 選考の段階と記録はアプリが持つ。シートから作り直す写しではないので、同期では消さない
+CREATE TABLE IF NOT EXISTS candidate_stages (
+  email TEXT PRIMARY KEY,
+  stage TEXT NOT NULL,
+  at TEXT NOT NULL,
+  by TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS candidate_records (
+  id INTEGER PRIMARY KEY,
+  email TEXT NOT NULL,
+  at TEXT NOT NULL,
+  by TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  body TEXT NOT NULL
+);
+-- 人と軸ごとの点。出どころ（ladder）を分けて持つ
 CREATE TABLE IF NOT EXISTS scores (
   email TEXT NOT NULL,
   origin TEXT NOT NULL,
@@ -94,8 +119,10 @@ CREATE TABLE IF NOT EXISTS people (
   email TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   evaluator TEXT,
-  -- manager は評価を Approve できる
-  role TEXT NOT NULL DEFAULT 'member'
+  -- manager は評価を Approve でき、すべてを見られる
+  role TEXT NOT NULL DEFAULT 'member',
+  -- 採用（候補者・面接の所見）を見られる。manager は付けなくても見られる
+  hiring INTEGER NOT NULL DEFAULT 0
 );
 -- 評価1件（評価される人1人・期1つ）と、細目ごとの判定
 CREATE TABLE IF NOT EXISTS reviews (
@@ -146,9 +173,19 @@ def connect(path: Path | str) -> sqlite3.Connection:
     db = sqlite3.connect(path, check_same_thread=False)
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA foreign_keys = ON")
+    # 候補者と面接はシートから作り直す写しなので、前の形（軸ごとの点）なら作り直す。
+    # 行の無い候補者のファイルは同期で読み直される
+    cols = {r[1] for r in db.execute("PRAGMA table_info(candidates)")}
+    rebuild = bool(cols) and "version" not in cols
+    if rebuild:
+        db.executescript("DROP TABLE IF EXISTS interviews; DROP TABLE candidates;")
     db.executescript(SCHEMA)
+    if rebuild:
+        db.execute("DELETE FROM scores WHERE origin = 'interview'")
     # 前の形で作った DB に、あとから足した列を足す
     cols = {r[1] for r in db.execute("PRAGMA table_info(files)")}
     if "modified_by" not in cols:
         db.execute("ALTER TABLE files ADD COLUMN modified_by TEXT")
+    if "hiring" not in {r[1] for r in db.execute("PRAGMA table_info(people)")}:
+        db.execute("ALTER TABLE people ADD COLUMN hiring INTEGER NOT NULL DEFAULT 0")
     return db
