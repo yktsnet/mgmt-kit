@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""board のテンプレートと、架空の候補者・求める人材のダミーを作り直す。"""
+"""board のテンプレートと、架空の候補者・求める人材・在籍者の採点結果のダミーを作り直す。"""
 
 import datetime as dt
 import shutil
@@ -11,6 +11,8 @@ from openpyxl.worksheet.datavalidation import DataValidation
 BOARD = Path(__file__).resolve().parent.parent
 TEMPLATES = BOARD / "templates"
 DRIVE = BOARD / "samples" / "drive"
+LADDER = BOARD / "samples" / "ladder"
+PERIOD = "2026-01〜2026-03"
 AXES = ["A", "B", "C", "D", "E"]
 STAGES = ["応募", "書類選考", "一次面接", "最終面接", "内定", "入社", "不採用", "辞退"]
 DOMAIN = "example.com"
@@ -45,6 +47,40 @@ CANDIDATES = [
         ("2026-02-12", "daniel-brooks", [1, 2, None, 1, 2], "型に沿って書く経験が無い"),
     ]),
 ]
+
+
+# 在籍者の採点結果。名前は usage のダミーの名簿と同じにして、usage と突き合わせられるようにする。
+# usage の README の「あるべき姿」と崩れ方の型に合わせ、型に乗っていない人は B を低くする。None は未観測
+STAFF = [
+    ("alice-walker", [4, 4, 3, 4, 3]),
+    ("emma-hughes", [3, 4, 2, 3, 3]),
+    ("ben-carter", [3, 1, 4, 2, 3]),
+    ("henry-ward", [2, 2, 3, None, 2]),
+    ("chloe-evans", [3, 2, 2, 2, None]),
+    ("felix-grant", [2, 1, 3, 1, 2]),
+    ("daniel-brooks", [3, 3, 2, 2, 2]),
+    ("grace-turner", [2, 3, 1, 3, 3]),
+    ("isla-morgan", [2, 2, None, 2, 1]),
+    ("jack-foster", [1, 1, 2, None, 1]),
+]
+AXIS_NAMES = ["A 上流・提案", "B 型の運用", "C ドメイン", "D 検証", "E 基盤"]
+
+
+def scoresheet(name: str, scores: list) -> str:
+    cells = ["未観測" if v is None else f"L{v}" for v in scores]
+    level = min(v for v in scores[:2] if v is not None)
+    weakest = min((v, i) for i, v in enumerate(scores[:2]))[1]
+    return (
+        f"# 採点 — {name} / {PERIOD}\n\n"
+        "## 点\n\n"
+        f"| {' | '.join(AXIS_NAMES)} |\n"
+        f"|{'---|' * len(AXIS_NAMES)}\n"
+        f"| {' | '.join(cells)} |\n\n"
+        "## 段階\n\n"
+        f"**L{level}**（A と B の低いほう）\n\n"
+        "## 次に上げる1軸\n\n"
+        f"**{AXIS_NAMES[weakest]}**\n"
+    )
 
 
 def stage_validation(cell: str) -> DataValidation:
@@ -96,10 +132,13 @@ def requisition_book(rows: list) -> Workbook:
 
 
 def main() -> None:
-    for d in (TEMPLATES, DRIVE):
+    for d in (TEMPLATES, DRIVE, LADDER):
         shutil.rmtree(d, ignore_errors=True)
     (DRIVE / "candidates").mkdir(parents=True)
     TEMPLATES.mkdir(parents=True)
+    LADDER.mkdir(parents=True)
+    for name, scores in STAFF:
+        (LADDER / f"{name}.md").write_text(scoresheet(name, scores), encoding="utf-8")
 
     candidate_book().save(TEMPLATES / "candidate.xlsx")
     requisition_book([]).save(TEMPLATES / "requisitions.xlsx")
@@ -116,6 +155,7 @@ def main() -> None:
         }
         candidate_book(profile, interviews).save(DRIVE / "candidates" / f"{name}.xlsx")
     print(f"wrote {len(CANDIDATES)} candidates and {len(REQUISITIONS)} requisitions to {DRIVE.relative_to(BOARD)}")
+    print(f"wrote {len(STAFF)} scoresheets to {LADDER.relative_to(BOARD)}")
 
 
 if __name__ == "__main__":

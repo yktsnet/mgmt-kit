@@ -48,6 +48,20 @@ CREATE TABLE IF NOT EXISTS requisition_targets (
   value INTEGER NOT NULL,
   PRIMARY KEY (name, axis)
 );
+-- 在籍者。ladder の採点結果1ファイルにつき1人で、名前はファイル名（usage の名簿と同じ、メールの @ より前）
+CREATE TABLE IF NOT EXISTS staff (
+  email TEXT PRIMARY KEY,
+  file_id TEXT NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  period TEXT NOT NULL,
+  level INTEGER
+);
+CREATE TABLE IF NOT EXISTS personas (
+  level INTEGER NOT NULL,
+  axis TEXT NOT NULL,
+  value INTEGER NOT NULL,
+  PRIMARY KEY (level, axis)
+);
 """
 
 
