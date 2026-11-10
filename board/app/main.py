@@ -140,7 +140,15 @@ def create_app(cfg: config.Config | None = None) -> FastAPI:
         return RedirectResponse("/login")
 
     def login_page(request: Request, error: str = ""):
-        people = board.db.execute("SELECT email, name, role FROM people ORDER BY rowid").fetchall() if board.cfg.demo else []
+        people = []
+        if board.cfg.demo:
+            # デモでは、入る前に誰が何を見られるかが分かるようにする
+            for p in board.db.execute("SELECT * FROM people ORDER BY rowid").fetchall():
+                reviewees = [r[0] for r in board.db.execute("SELECT name FROM people WHERE evaluator = ? ORDER BY rowid", (p["email"],))]
+                tabs = ["評価" if access.has_reviews(board.db, p) else None, "現在地", "採用" if access.can_hire(p) else None,
+                        "設定" if access.is_manager(p) else None]
+                people.append({"email": p["email"], "name": p["name"], "role": p["role"], "hiring": access.can_hire(p),
+                               "reviewees": reviewees, "tabs": [t for t in tabs if t]})
         return templates.TemplateResponse(
             request, "login.html",
             {"demo": board.cfg.demo, "people": people, "client_id": board.cfg.google_client_id, "domain": board.cfg.allowed_domain, "error": error},
@@ -191,6 +199,7 @@ def create_app(cfg: config.Config | None = None) -> FastAPI:
         ctx.update(
             me=me,
             can_hire=access.can_hire(me),
+            has_reviews=access.has_reviews(board.db, me),
             errors=views.errors(board.db),
             synced=board.synced_label,
             source="Drive" if board.cfg.source == "drive" else "手元のフォルダ",
@@ -199,12 +208,14 @@ def create_app(cfg: config.Config | None = None) -> FastAPI:
         return templates.TemplateResponse(request, f"{name}.html", ctx)
 
     @app.get("/")
-    def home():
-        return RedirectResponse("/reviews")
+    def home(request: Request):
+        return RedirectResponse("/reviews" if access.has_reviews(board.db, current_user(request)) else "/now")
 
     @app.get("/reviews", response_class=HTMLResponse)
     def reviews(request: Request, period: str | None = None):
         board.refresh()
+        if not access.has_reviews(board.db, current_user(request)):
+            raise HTTPException(403)
         ps = views.periods(board.db)
         if period not in ps:
             period = ps[-1] if ps else None
@@ -311,10 +322,11 @@ def create_app(cfg: config.Config | None = None) -> FastAPI:
     @app.get("/settings", response_class=HTMLResponse)
     def settings(request: Request, v: int | None = None):
         board.refresh()
+        if not access.is_manager(current_user(request)):
+            raise HTTPException(403)
         return render(
             request,
             "settings",
-            editable=access.is_manager(current_user(request)),
             definition=views.definition(board.db, v),
             assignments=views.assignments(board.db),
             people=views.people(board.db),

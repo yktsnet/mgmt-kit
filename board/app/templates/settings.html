@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block title %}設定 — board{% endblock %}
-{% block head %}<h1>設定</h1><span class="note">Ladder・Reviewer・採用枠。評価を回す前に決めておく{% if not editable %}。直せるのは Manager だけ{% endif %}</span>{% endblock %}
+{% block head %}<h1>設定</h1><span class="note">Ladder・Reviewer・採用枠。評価を回す前に決めておく</span>{% endblock %}
 {% block main %}
 {% set d = definition %}
 {% set latest = d.versions[-1] if d.versions else none %}
 
-{% set ladder_editable = editable and d.version == latest and latest and not d.in_use %}
+{% set ladder_editable = d.version == latest and latest and not d.in_use %}
 <section class="frame" id="definition" data-editable="{{ 'yes' if ladder_editable }}">
   <div class="head">
     <h2>Ladder</h2>
@@ -18,7 +18,7 @@
       <button class="btn edit-only" type="button" data-action="new-version">New version</button>
       <button class="btn read-only" type="button" data-action="edit">Edit</button>
       <button class="btn primary edit-only" type="button" data-action="done">Done</button>
-      {% elif editable and d.version == latest and latest %}
+      {% elif d.version == latest and latest %}
       <button class="btn" type="button" data-action="new-version">New version</button>
       {% endif %}
     </span>
@@ -43,10 +43,10 @@
   {% endif %}
 </section>
 
-<section class="frame" id="people" data-editable="{{ 'yes' if people and editable }}">
+<section class="frame" id="people" data-editable="{{ 'yes' if people }}">
   <div class="head">
     <h2>Reviewer</h2><span class="note">誰が誰を評価するか。Manager は評価を Approve でき、すべてを見られる。Hiring を付けた人は採用のタブを見られる</span>
-    {% if people and editable %}<span class="actions">
+    {% if people %}<span class="actions">
       <button class="btn read-only" type="button" data-action="edit">Edit</button>
       <button class="btn primary edit-only" type="button" data-action="done">Done</button>
     </span>{% endif %}
@@ -87,10 +87,10 @@
   {% endif %}
 </section>
 
-<section class="frame" id="requisitions" data-editable="{{ 'yes' if requisitions and editable }}">
+<section class="frame" id="requisitions" data-editable="{{ 'yes' if requisitions }}">
   <div class="head">
     <h2>採用枠</h2><span class="note">枠ごとの人数と、軸ごとに求める高さ（1〜5、空欄は求めない）</span>
-    {% if requisitions and editable %}<span class="actions">
+    {% if requisitions %}<span class="actions">
       <button class="btn read-only" type="button" data-action="edit">Edit</button>
       <button class="btn edit-only" type="button" data-action="done">Cancel</button>
       <button class="btn primary edit-only" type="button" data-action="save-req">Save</button>

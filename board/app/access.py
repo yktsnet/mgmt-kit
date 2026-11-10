@@ -3,7 +3,8 @@
 - Manager はすべてを見られる
 - Member は、自分が Reviewer として担当する人の評価・記録と、Approved になった自分の評価だけを見られる
 - 採用（候補者・面接の所見）は、設定で採用を付けた人と Manager が見られる
-- 設定は Manager だけが直せる
+- 設定は Manager だけが見られ、直せる
+- タブは見られるものがある人にだけ出す。採用も担当も無い Member には現在地だけが出る
 """
 
 import sqlite3
@@ -29,6 +30,15 @@ def can_see_review(db: sqlite3.Connection, me: sqlite3.Row | None, email: str, p
         return False
     st = state_of(db, email, period)
     return st is not None and st["state"] == APPROVED
+
+
+def has_reviews(db: sqlite3.Connection, me: sqlite3.Row | None) -> bool:
+    """評価のタブを出すか。見られる評価が1件も無い人には出さない。"""
+    if me is None:
+        return False
+    if is_manager(me) or db.execute("SELECT 1 FROM people WHERE evaluator = ?", (me["email"],)).fetchone():
+        return True
+    return db.execute("SELECT 1 FROM review_states WHERE email = ? AND state = ?", (me["email"], APPROVED)).fetchone() is not None
 
 
 def can_see_records(db: sqlite3.Connection, me: sqlite3.Row | None, email: str) -> bool:

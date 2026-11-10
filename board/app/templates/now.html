@@ -39,7 +39,7 @@
 {% if report %}
 <div class="pair">
 <section class="frame">
-  <div class="head"><h2>日ごとのトークン量</h2><span class="note">{{ report.since }} 〜 {{ report.until }} の平日</span></div>
+  <div class="head"><h2>日ごとのトークン量</h2><span class="note">{{ report.since }} 〜 {{ report.until }} の平日。破線は全員の1人あたりの5日平均（直前5平日の移動平均。3人以上のときだけ）</span></div>
   <div class="chart">{{ report.tokens_chart|safe }}</div>
 </section>
 <section class="frame">
@@ -49,7 +49,7 @@
 </div>
 
 <section class="frame">
-  <div class="head"><h2>量と成果</h2><span class="note">期間の合計。トークン量の多い順。名前を押すと毎日の推移が出る</span></div>
+  <div class="head"><h2>量と成果</h2><span class="note">期間の合計。トークン量の多い順。名前を押すと毎日の推移が出る。平均は全員の1人あたりで、3人以上のときだけ出す</span></div>
   <div class="scroll">
   <table class="report wide">
     <thead><tr><th>Member</th><th class="num">利用時間</th><th class="num">トークン量</th><th class="num">commit</th><th class="num">PR</th><th class="num">追加した行</th><th class="num">削除した行</th><th class="num">立てた Issue</th><th class="num">閉じた Issue</th></tr></thead>
@@ -59,6 +59,10 @@
       <td class="num">{{ u.lines_added }}</td><td class="num">{{ u.lines_removed }}</td>
       <td class="num">{{ u.issues[0] if u.issues else '-' }}</td><td class="num">{{ u.issues[1] if u.issues else '-' }}</td>
     </tr>{% endfor %}</tbody>
+    {% if report.average %}{% set a = report.average %}<tfoot><tr class="average">
+      <td>平均（全員）</td><td class="num">{{ a.minutes }}</td><td class="num">{{ a.tokens }}</td><td class="num">{{ a.commits }}</td><td class="num">{{ a.pull_requests }}</td>
+      <td class="num">{{ a.lines_added }}</td><td class="num">{{ a.lines_removed }}</td><td class="num">{{ a.issues_opened }}</td><td class="num">{{ a.issues_closed }}</td>
+    </tr></tfoot>{% endif %}
   </table>
   </div>
 </section>
@@ -74,6 +78,9 @@
       <td>{% for k, n in u.top_skills %}<code>{{ k }}</code>（{{ n }}）{% if not loop.last %}、{% endif %}{% else %}<span class="muted">-</span>{% endfor %}</td>
       <td class="num">{{ u.subagent }}</td><td>{{ u.efforts }}</td><td>{{ u.families }}</td><td class="num">{{ u.per_session }}</td>
     </tr>{% endfor %}</tbody>
+    {% if report.average %}{% set a = report.average %}<tfoot><tr class="average">
+      <td>平均（全員）</td><td class="num">{{ a.skills }}</td><td class="muted">-</td><td class="num">{{ a.subagent }}</td><td class="muted">-</td><td class="muted">-</td><td class="num">{{ a.per_session }}</td>
+    </tr></tfoot>{% endif %}
   </table>
   </div>
 </section>

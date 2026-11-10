@@ -63,4 +63,4 @@ def test_memo_is_appended_and_empty_is_refused(db):
     with pytest.raises(SheetError):
         add_memo(db, emma, GRACE, P, "  ")
     (r,) = records(db, GRACE, P)
-    assert (r["kind"], r["body"], r["by_name"]) == ("memo", "次は D を見る", "Emma Hughes")
+    assert (r["kind"], r["body"], r["by_name"]) == ("memo", "次は D を見る", "🐘 Emma Hughes")

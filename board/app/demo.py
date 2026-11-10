@@ -18,6 +18,11 @@ EVALUATORS = {
     "henry-ward": "daniel-brooks", "isla-morgan": "daniel-brooks", "jack-foster": "daniel-brooks",
 }
 MANAGERS = {"alice-walker"}
+# 名前の頭文字の動物。デモで人を見分けやすくする
+ANIMALS = {
+    "alice-walker": "🐊", "emma-hughes": "🐘", "ben-carter": "🐻", "henry-ward": "🦔", "chloe-evans": "🐱",
+    "felix-grant": "🦊", "daniel-brooks": "🐬", "grace-turner": "🦒", "isla-morgan": "🦎", "jack-foster": "🐆",
+}
 # 面接官を務める人に、採用を見られるようにする。Manager は付けなくても見られる
 HIRING = {"emma-hughes", "daniel-brooks", "grace-turner"}
 
@@ -52,6 +57,6 @@ def email(name: str) -> str:
 
 def people() -> list[DemoPerson]:
     return [
-        DemoPerson(email(n), n.replace("-", " ").title(), email(EVALUATORS[n]) if n in EVALUATORS else "", "manager" if n in MANAGERS else "member", n in HIRING)
+        DemoPerson(email(n), f"{ANIMALS[n]} {n.replace('-', ' ').title()}", email(EVALUATORS[n]) if n in EVALUATORS else "", "manager" if n in MANAGERS else "member", n in HIRING)
         for n in STAFF
     ]

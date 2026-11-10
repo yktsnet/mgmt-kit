@@ -30,7 +30,7 @@
   </div>
 </section>
 {% else %}
-<section class="frame"><p class="empty">{% if me and me.role == 'manager' %}在籍者が設定に無い。{% else %}見られる評価が無い。Reviewer として担当する人の評価と、Approved になった自分の評価が出る。{% endif %}</p></section>
+<section class="frame"><p class="empty">在籍者が設定に無い。</p></section>
 {% endfor %}
 <p class="legend">Ready は判定が出そろい、Submit を待つ状態。… は判定の途中、— は未観測かまだ決まっていない。Level は A と B の低いほう</p>
 {% endblock %}

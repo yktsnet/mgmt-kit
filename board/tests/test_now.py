@@ -67,3 +67,31 @@ def test_reviewer_sets_next_axis_and_it_is_recorded(tmp_path, monkeypatch):
 def test_others_cannot_set_next_axis(tmp_path, monkeypatch):
     c = make(tmp_path, monkeypatch, who="jack-foster")
     assert c.post("/api/growth/2026-H2/ben-carter@example.com", json={"axis": "D"}).status_code == 400
+
+
+def test_charts_and_tables_show_team_average(client):
+    html = client.get("/now").text
+    assert html.count('<polyline class="avg"') == 2
+    assert html.count('<tr class="average">') == 2
+
+
+def test_member_sees_average_of_everyone_but_only_own_lines(tmp_path, monkeypatch):
+    html = make(tmp_path, monkeypatch, "ben-carter").get("/now").text
+    assert html.count('<tr class="average">') == 2 and html.count('<polyline class="avg"') == 2
+    assert ">emma-hughes<" not in html and ">ben-carter<" in html
+
+
+def test_average_is_smoothed_and_needs_three_people():
+    from app import config as cfg
+    from app.usage_report import _render
+
+    r = _render(cfg.load().usage_dir)
+    import datetime as dt
+
+    days = [dt.date(2026, 4, i) for i in range(6, 11)]
+    by_date = {d: {"members": {"a": {"tokens": v}, "b": {"tokens": 0}, "c": {"tokens": 0}}} for d, v in zip(days, (30, 0, 30, 0, 30))}
+    # 日ごとの平均は 10, 0, 10, 0, 10。直前の日までと合わせてならす
+    assert r.average(days, by_date, ["a", "b", "c"], "tokens") == [10, 5, 20 / 3, 5, 6]
+    assert 'class="avg"' not in r.team_chart(days, by_date, ["a", "b"], "tokens", str)
+    assert 'class="avg"' in r.team_chart(days, by_date, ["a"], "tokens", str, average_of=["a", "b", "c"])
+    assert r.team_average({"a": {}, "b": {}}) is None

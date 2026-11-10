@@ -84,9 +84,21 @@ def links(html: str) -> set[str]:
 def test_review_list_is_narrowed(app):
     assert links(login(app, "alice-walker").get("/reviews").text) == {"ben-carter", "chloe-evans", "grace-turner", "emma-hughes", "henry-ward"}
     assert links(login(app, "emma-hughes").get("/reviews").text) == {"chloe-evans", "grace-turner"}
-    assert links(login(app, "ben-carter").get("/reviews").text) == set()
     approve_grace(app)
     assert links(login(app, "grace-turner").get("/reviews").text) == {"grace-turner"}
+
+
+def test_review_tab_is_hidden_when_nothing_to_see(app):
+    ben = login(app, "ben-carter")
+    assert ben.get("/reviews").status_code == 403
+    assert 'href="/reviews"' not in ben.get("/now").text
+    assert ben.get("/", follow_redirects=False).headers["location"] == "/now"
+    # 自分の評価が Approved になれば出る
+    grace = login(app, "grace-turner")
+    assert grace.get("/reviews").status_code == 403
+    approve_grace(app)
+    assert grace.get("/reviews").status_code == 200
+    assert grace.get("/", follow_redirects=False).headers["location"] == "/reviews"
 
 
 def test_unassigned_group_only_for_manager(app):
@@ -174,8 +186,8 @@ def test_hiring_pages(app, viewer, status):
 
 
 def test_hiring_tab_shows_only_for_those_who_can_see(app):
-    assert 'href="/hiring"' in login(app, "grace-turner").get("/reviews").text
-    assert 'href="/hiring"' not in login(app, "ben-carter").get("/reviews").text
+    assert 'href="/hiring"' in login(app, "grace-turner").get("/now").text
+    assert 'href="/hiring"' not in login(app, "ben-carter").get("/now").text
 
 
 def test_hiring_flag_is_set_in_settings(app):
@@ -202,6 +214,21 @@ def test_settings_api_is_manager_only(app, url, body):
     assert login(app, "emma-hughes").post(url, json=body).status_code == 403
 
 
-def test_settings_page_has_no_edit_for_member(app):
-    assert 'data-action="edit"' not in login(app, "emma-hughes").get("/settings").text
+def test_settings_is_manager_only(app):
+    emma = login(app, "emma-hughes")
+    assert emma.get("/settings").status_code == 403
+    assert 'href="/settings"' not in emma.get("/now").text
     assert 'data-action="edit"' in login(app, "alice-walker").get("/settings").text
+
+
+def test_plain_member_sees_only_now_tab(app):
+    html = login(app, "ben-carter").get("/now").text
+    nav = html[html.index('<nav class="top"'):html.index("</nav>")]
+    assert [t for t in ("/reviews", "/now", "/hiring", "/settings") if f'href="{t}"' in nav] == ["/now"]
+
+
+def test_demo_login_lists_what_each_person_can_see(app):
+    html = TestClient(app).get("/login").text
+    assert "<td class=\"nowrap\">評価・現在地・採用・設定</td>" in html  # alice-walker
+    assert "<span class=\"chip\">🐱 Chloe Evans</span><span class=\"chip\">🦊 Felix Grant</span>" in html  # emma-hughes
+    assert "<td class=\"nowrap\">現在地</td>" in html  # ben-carter
