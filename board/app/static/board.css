@@ -1,0 +1,91 @@
+/* 配色と文字は ladder/slides.html に揃える */
+:root {
+  --navy: #1B2A5E; --teal: #1C6E8C; --gold: #B8860B; --crim: #9B2C2C;
+  --grey: #6B7280; --row: #F5F7FB; --bordr: #D5DAE5; --ink: #1A1A1A; --bg: #FFFFFF;
+  --meet: #E3F0EC; --meet-ink: #1F5F4A; --short: #F8E9E4; --short-ink: var(--crim);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Noto Sans JP", "Noto Sans CJK JP", "Yu Gothic UI", "Hiragino Sans", "Meiryo", sans-serif;
+  color: var(--ink); background: var(--bg); font-size: 14px; line-height: 1.6;
+}
+a { color: var(--teal); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+header.bar {
+  display: flex; align-items: baseline; gap: 24px; padding: 12px 24px;
+  border-bottom: 2px solid var(--navy);
+}
+header.bar .name { font-weight: 700; color: var(--navy); font-size: 16px; letter-spacing: .02em; }
+header.bar nav a { color: var(--ink); margin-right: 16px; padding-bottom: 2px; }
+header.bar nav a.on { color: var(--navy); font-weight: 700; border-bottom: 2px solid var(--gold); }
+header.bar .meta { margin-left: auto; color: var(--grey); font-size: 12px; }
+
+main { max-width: 1120px; margin: 0 auto; padding: 24px 24px 64px; }
+h1 { font-size: 20px; color: var(--navy); margin-bottom: 4px; }
+h2 { font-size: 15px; color: var(--navy); margin: 32px 0 8px; }
+h2 .sub { font-weight: 400; color: var(--grey); font-size: 13px; margin-left: 8px; }
+p.lead { color: #374151; margin-bottom: 16px; }
+.muted { color: var(--grey); }
+
+table { width: 100%; border-collapse: collapse; border: 1px solid var(--bordr); }
+/* 狭い幅では表を縮めず、横にスクロールさせる。縮めると日本語が1文字ずつ折り返す */
+.scroll { overflow-x: auto; }
+.scroll table { min-width: 640px; }
+.scroll th, .scroll td { white-space: nowrap; }
+td.note { white-space: pre-wrap; min-width: 200px; }
+th, td { padding: 6px 10px; text-align: left; vertical-align: middle; }
+thead th { background: var(--navy); color: #fff; font-weight: 700; font-size: 12px; white-space: nowrap; }
+tbody td { border-top: 1px solid var(--bordr); }
+tbody tr:nth-child(even) td { background: var(--row); }
+th.ax, td.ax, td.num, th.num { text-align: center; width: 56px; }
+td.num, th.num { width: auto; text-align: right; font-variant-numeric: tabular-nums; }
+tr.target td { background: #EEF2F8 !important; font-weight: 700; color: var(--navy); }
+tr.closed td { color: var(--grey); }
+
+td.ax.meet { background: var(--meet) !important; color: var(--meet-ink); font-weight: 700; }
+td.ax.short { background: var(--short) !important; color: var(--short-ink); }
+td.ax.none { color: #B0B6C3; }
+
+.legend { font-size: 12px; color: var(--grey); margin: 6px 0 0; }
+.legend span { display: inline-block; padding: 0 6px; margin-right: 8px; }
+.legend .meet { background: var(--meet); color: var(--meet-ink); }
+.legend .short { background: var(--short); color: var(--short-ink); }
+
+.lv { display: inline-block; min-width: 28px; text-align: center; background: var(--navy); color: #fff;
+      font-weight: 700; font-size: 12px; padding: 1px 6px; border-radius: 2px; }
+
+.funnel td { text-align: center; }
+.funnel td.zero { color: #B0B6C3; }
+.funnel th.closed { background: #4B5563; }
+
+.errors { border: 1px solid var(--crim); border-left-width: 4px; padding: 8px 12px; margin-bottom: 20px; }
+.errors b { color: var(--crim); }
+.errors li { list-style: none; font-size: 13px; }
+.errors code { font-family: "Noto Sans Mono CJK JP", monospace; font-size: 12px; }
+
+dl.profile { display: grid; grid-template-columns: 96px 1fr; gap: 2px 12px; margin: 12px 0 8px; }
+dl.profile dt { color: var(--grey); }
+.note { white-space: pre-wrap; }
+
+@media (max-width: 720px) {
+  header.bar { flex-wrap: wrap; gap: 8px 16px; padding: 10px 16px; }
+  header.bar .meta { margin-left: 0; width: 100%; }
+  main { padding: 16px; }
+}
+
+header.bar nav .off { color: #B0B6C3; margin-right: 16px; cursor: default; }
+p.lead code, p.muted code { font-family: "Noto Sans Mono CJK JP", monospace; font-size: 12px; }
+p.versions { font-size: 13px; margin-bottom: 8px; }
+
+/* 定義の 5×5。行が段階（上が L5）、列が軸 */
+table.grid { table-layout: fixed; min-width: 960px; }
+table.grid thead th { white-space: normal; line-height: 1.4; }
+table.grid th.lvcol { width: 48px; background: var(--row); text-align: center; border-top: 1px solid var(--bordr); }
+table.grid thead th.lvcol { background: var(--navy); }
+table.grid td { vertical-align: top; white-space: normal; font-size: 12.5px; line-height: 1.55; border-left: 1px solid var(--bordr); }
+table.grid tbody tr:nth-child(even) td { background: #fff; }
+.item { display: flex; gap: 6px; }
+.item + .item { margin-top: 6px; padding-top: 6px; border-top: 1px dotted var(--bordr); }
+.item .key { color: var(--teal); font-weight: 700; flex: none; }
+tr.unassigned td { color: var(--crim); }

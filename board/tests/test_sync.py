@@ -129,7 +129,7 @@ def test_duplicate_email_keeps_newer_file(drive, db):
 
 
 def test_files_outside_layout_are_ignored(drive, db):
-    shutil.copy(drive / "requisitions.xlsx", drive / "memo.xlsx")
+    shutil.copy(drive / "settings" / "requisitions.xlsx", drive / "memo.xlsx")
     (drive / "candidates" / "~$noah-reed.xlsx").write_bytes(b"lock")
     result = sync(XlsxFolderSource(drive), db)
     assert "memo" not in result.read
@@ -186,4 +186,4 @@ def test_to_date(v, want):
 def test_xlsx_ref_has_no_extension(drive):
     refs = XlsxFolderSource(drive).list()
     assert FileRef in {type(r) for r in refs}
-    assert "requisitions" in {r.path for r in refs}
+    assert "settings/requisitions" in {r.path for r in refs}

@@ -88,6 +88,13 @@ CREATE TABLE IF NOT EXISTS definition_items (
   file_id TEXT NOT NULL REFERENCES files(id) ON DELETE CASCADE,
   PRIMARY KEY (version, axis, level, key)
 );
+-- 在籍者の名簿と、評価する担当の割り当て。担当は名簿の中の誰か
+CREATE TABLE IF NOT EXISTS people (
+  email TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  evaluator TEXT,
+  file_id TEXT NOT NULL REFERENCES files(id) ON DELETE CASCADE
+);
 """
 
 

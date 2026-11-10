@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}設定 — board{% endblock %}
+{% block main %}
+<h1>設定</h1>
+<p class="lead">評価を回す前に決めておくもの。中身は Drive の <code>settings/</code> にあるスプレッドシートで直し、保存すると次に開いたときに反映される。</p>
+
+<h2 id="definition">定義{% if definition.version %}<span class="sub">v{{ definition.version }}・細目 {{ definition.count }}</span>{% endif %}</h2>
+{% if definition.versions %}
+{% if definition.versions|length > 1 %}
+<p class="versions">版：{% for v in definition.versions %}{% if v == definition.version %}<b>v{{ v }}</b>{% else %}<a href="?v={{ v }}#definition">v{{ v }}</a>{% endif %}{% if not loop.last %}・{% endif %}{% endfor %}</p>
+{% endif %}
+<div class="scroll">
+<table class="grid">
+  <thead><tr><th class="lvcol"></th>{% for a in AXES %}<th>{{ a }} {{ AXIS_NAMES[a] }}</th>{% endfor %}</tr></thead>
+  <tbody>{% for lv in (5, 4, 3, 2, 1) %}
+    <tr><th class="lvcol"><span class="lv">L{{ lv }}</span></th>
+    {% for a in AXES %}<td>
+      {% for it in definition.cells[(lv, a)] %}<div class="item"><span class="key">{{ it.key }}</span>{{ it.text }}</div>{% endfor %}
+    </td>{% endfor %}</tr>
+  {% endfor %}</tbody>
+</table>
+</div>
+{% else %}
+<p class="muted"><code>settings/definition</code> が無いか、読めていない。</p>
+{% endif %}
+
+<h2 id="people">担当の割り当て<span class="sub">担当1人が、割り当てた人を評価する</span></h2>
+{% if assignments %}
+<table>
+  <thead><tr><th>担当</th><th>評価する人</th></tr></thead>
+  <tbody>{% for g in assignments %}
+    <tr class="{{ 'unassigned' if not g.evaluator }}">
+      <td>{% if g.evaluator %}{{ g.evaluator.name }}{% else %}未割り当て{% endif %}</td>
+      <td>{% for p in g.people %}{{ p.name }}{% if not loop.last %}、{% endif %}{% endfor %}</td>
+    </tr>
+  {% endfor %}</tbody>
+</table>
+{% else %}
+<p class="muted"><code>settings/people</code> が無いか、読めていない。</p>
+{% endif %}
+
+<h2 id="requisitions">採用の枠<span class="sub">枠ごとに求める高さ。空欄は求めない軸</span></h2>
+{% if requisitions %}
+<div class="scroll">
+<table>
+  <thead><tr><th>枠</th><th class="num">人数</th><th>参照ペルソナ</th>{% for a in AXES %}<th class="ax" title="{{ AXIS_NAMES[a] }}">{{ a }}</th>{% endfor %}</tr></thead>
+  <tbody>{% for r, target in requisitions %}
+    <tr><td>{{ r.name }}</td><td class="num">{{ r.count }}</td><td>{{ r.persona }}</td>
+      {% for t in target %}<td class="ax">{{ t if t is not none else '' }}</td>{% endfor %}</tr>
+  {% endfor %}</tbody>
+</table>
+</div>
+{% else %}
+<p class="muted"><code>settings/requisitions</code> が無いか、読めていない。</p>
+{% endif %}
+{% endblock %}

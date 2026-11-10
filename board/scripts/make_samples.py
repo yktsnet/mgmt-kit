@@ -142,6 +142,28 @@ def definition_book() -> Workbook:
     return wb
 
 
+# 在籍者と担当。usage のダミーと同じ10人で、3人の担当がそれぞれ3人ずつを評価する。alice-walker は未割り当て
+EVALUATORS = {
+    "emma-hughes": "alice-walker", "ben-carter": "alice-walker", "daniel-brooks": "alice-walker",
+    "chloe-evans": "emma-hughes", "felix-grant": "emma-hughes", "grace-turner": "emma-hughes",
+    "henry-ward": "daniel-brooks", "isla-morgan": "daniel-brooks", "jack-foster": "daniel-brooks",
+}
+
+
+def people_book(names: list[str]) -> Workbook:
+    wb = Workbook()
+    ws = wb.active
+    assert ws is not None
+    ws.title = "在籍者"
+    ws.append(["メール", "氏名", "担当"])
+    for name in names:
+        ev = EVALUATORS.get(name)
+        ws.append([f"{name}@{DOMAIN}", name.replace("-", " ").title(), f"{ev}@{DOMAIN}" if ev else None])
+    for col, width in zip("ABC", (30, 18, 30)):
+        ws.column_dimensions[col].width = width
+    return wb
+
+
 def requisition_book(rows: list) -> Workbook:
     wb = Workbook()
     ws = wb.active
@@ -168,8 +190,10 @@ def main() -> None:
     definition_book().save(TEMPLATES / "definition.xlsx")
     (DRIVE / "settings").mkdir()
     definition_book().save(DRIVE / "settings" / "definition.xlsx")
+    people_book([]).save(TEMPLATES / "people.xlsx")
+    people_book([name for name, _ in STAFF]).save(DRIVE / "settings" / "people.xlsx")
 
-    requisition_book(REQUISITIONS).save(DRIVE / "requisitions.xlsx")
+    requisition_book(REQUISITIONS).save(DRIVE / "settings" / "requisitions.xlsx")
     for name, req, stage, applied, source, interviews in CANDIDATES:
         profile = {
             "氏名": name.replace("-", " ").title(),

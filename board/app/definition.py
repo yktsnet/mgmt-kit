@@ -100,7 +100,8 @@ def from_ladder_md(text: str) -> list[Item]:
             continue
         m = re.match(r"\|\s*L([1-5])\s*\|(.+?)\|(.+?)\|\s*$", line)
         if axis and m:
-            level, statement, evidence = int(m.group(1)), m.group(2).strip(), m.group(3).strip()
+            # シートを直すのは Markdown を書かない人なので、コードの印は外す
+            level, statement, evidence = (int(m.group(1)), *(g.replace("`", "").strip() for g in m.group(2, 3)))
             for i, part in enumerate(split_statement(statement)):
                 items.append(Item(axis, level, "abcdefghijklmnopqrstuvwxyz"[i], part, evidence))
     return items
