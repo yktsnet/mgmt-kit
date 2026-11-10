@@ -25,7 +25,7 @@
   {% if edited_after %}<p class="warn">{{ state.state|capitalize }} のあとでシートが直されている。出した内容と、いまの判定がずれているかもしれない。</p>{% endif %}
 </section>
 
-<div class="columns">
+<div class="{{ 'columns' if show_records else 'single' }}">
 <div class="main-col">
 {% if review %}
 <section class="frame">
@@ -49,6 +49,7 @@
 <section class="frame"><p class="empty">この期の評価のシートがまだ無い。</p></section>
 {% endif %}
 </div>
+{% if show_records %}
 <aside class="side-col">
 <section class="frame" id="record">
   <div class="head"><h2>Record</h2><span class="note">足すだけで、直したり消したりはしない</span></div>
@@ -65,6 +66,7 @@
   {% else %}<p class="empty">まだ記録が無い。</p>{% endif %}
 </section>
 </aside>
+{% endif %}
 </div>
 {% endblock %}
 {% block scripts %}<script src="/static/review.js" data-period="{{ period }}" data-email="{{ person.email }}"></script>{% endblock %}

@@ -16,7 +16,7 @@
   <table class="report">
     <thead><tr><th>Member</th><th class="num">Level</th><th>次に上げる軸</th><th>理由</th><th>決めた人</th></tr></thead>
     <tbody>{% for r in rows %}{% set nx = r.chosen or r.suggested %}
-      <tr>
+      <tr data-person="{{ r.email }}">
         <td class="nowrap">{% if r.period %}<a href="/reviews/{{ r.period }}/{{ r.email }}">{{ r.name }}</a>{% else %}{{ r.name }}{% endif %}</td>
         <td class="num">{% if r.level %}L{{ r.level }}{% else %}<span class="muted">-</span>{% endif %}</td>
         <td class="nowrap">

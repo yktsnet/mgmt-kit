@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import auth, config, settings as cfg_settings, usage_report, views, workflow
+from . import access, auth, config, hiring, settings as cfg_settings, usage_report, views, workflow
 from .ladder import sync_ladder
 from .parse import AXES, SheetError
 from .sources.xlsx_folder import XlsxFolderSource
@@ -102,6 +102,11 @@ class PersonBody(BaseModel):
     email: str
     evaluator: str | None = None
     role: str | None = None
+    hiring: bool | None = None
+
+
+class StageBody(BaseModel):
+    stage: str
 
 
 class RequisitionBody(BaseModel):
@@ -182,8 +187,10 @@ def create_app(cfg: config.Config | None = None) -> FastAPI:
         return res
 
     def render(request: Request, name: str, **ctx) -> HTMLResponse:
+        me = current_user(request)
         ctx.update(
-            me=current_user(request),
+            me=me,
+            can_hire=access.can_hire(me),
             errors=views.errors(board.db),
             synced=board.synced_label,
             source="Drive" if board.cfg.source == "drive" else "手元のフォルダ",
@@ -201,23 +208,27 @@ def create_app(cfg: config.Config | None = None) -> FastAPI:
         ps = views.periods(board.db)
         if period not in ps:
             period = ps[-1] if ps else None
-        return render(request, "reviews", periods=ps, period=period, groups=views.reviews(board.db, period))
+        return render(request, "reviews", periods=ps, period=period, groups=views.reviews(board.db, period, current_user(request)))
 
     @app.get("/now", response_class=HTMLResponse)
     def now_page(request: Request):
         board.refresh()
-        rows, together = views.now(board.db)
         me = current_user(request)
-        return render(request, "now", rows=rows, together=together, report=usage_report.team(board.cfg.usage_dir),
-                      can_edit={r.email for r in rows if me and (me["role"] == "manager" or board.db.execute("SELECT 1 FROM people WHERE email = ? AND evaluator = ?", (r.email, me["email"])).fetchone())})
+        rows, together = views.now(board.db, me)
+        only = None if access.is_manager(me) else {r.email for r in rows}
+        return render(request, "now", rows=rows, together=together, report=usage_report.team(board.cfg.usage_dir, only),
+                      can_edit={r.email for r in rows if r.period and (access.is_manager(me) or access.reviews_of(board.db, me, r.email))})
 
     @app.get("/now/{email}", response_class=HTMLResponse)
     def now_member(request: Request, email: str):
         board.refresh()
+        me = current_user(request)
         person = board.db.execute("SELECT * FROM people WHERE email = ?", (email,)).fetchone()
         if not person:
             raise HTTPException(404)
-        rows, _ = views.now(board.db)
+        if not access.can_see_person(board.db, me, email):
+            raise HTTPException(403)
+        rows, _ = views.now(board.db, me)
         row = next((r for r in rows if r.email == email), None)
         return render(request, "now_member", person=person, row=row, usage=usage_report.member(board.cfg.usage_dir, email))
 
@@ -228,24 +239,74 @@ def create_app(cfg: config.Config | None = None) -> FastAPI:
     @app.get("/reviews/{period}/{email}", response_class=HTMLResponse)
     def review(request: Request, period: str, email: str):
         board.refresh()
+        me = current_user(request)
         d = views.review_detail(board.db, period, email)
         if not d:
             raise HTTPException(404)
-        acts = workflow.allowed(board.db, current_user(request), email, period, d["row"].status == "ready") if d["review"] else []
-        return render(request, "review", period=period, actions=acts, **d)
+        if not access.can_see_review(board.db, me, email, period):
+            raise HTTPException(403)
+        show_records = access.can_see_records(board.db, me, email)
+        if not show_records:
+            d["records"] = []
+        acts = workflow.allowed(board.db, me, email, period, d["row"].status == "ready") if d["review"] else []
+        return render(request, "review", period=period, actions=acts, show_records=show_records, **d)
+
+    def forbidden():
+        return JSONResponse({"error": "この操作をする権限が無い"}, 403)
 
     @app.post("/api/reviews/{period}/{email}/action")
     def review_action(request: Request, period: str, email: str, body: ActionBody):
+        me = current_user(request)
         d = views.review_detail(board.db, period, email)
         if not d or not d["review"]:
             raise HTTPException(404)
-        return apply(lambda db: workflow.act(db, current_user(request), email, period, body.action, d["row"].status == "ready"))
+        if not access.can_see_review(board.db, me, email, period):
+            return forbidden()
+        return apply(lambda db: workflow.act(db, me, email, period, body.action, d["row"].status == "ready"))
 
     @app.post("/api/reviews/{period}/{email}/memo")
     def review_memo(request: Request, period: str, email: str, body: MemoBody):
+        me = current_user(request)
         if not views.review_detail(board.db, period, email):
             raise HTTPException(404)
-        return apply(lambda db: workflow.add_memo(db, current_user(request), email, period, body.body))
+        if not access.can_see_records(board.db, me, email):
+            return forbidden()
+        return apply(lambda db: workflow.add_memo(db, me, email, period, body.body))
+
+    # ---- 採用
+
+    @app.get("/hiring", response_class=HTMLResponse)
+    def hiring_page(request: Request):
+        board.refresh()
+        if not access.can_hire(current_user(request)):
+            raise HTTPException(403)
+        return render(request, "hiring", openings=views.openings(board.db), stages=hiring.STAGES)
+
+    @app.get("/hiring/{email}", response_class=HTMLResponse)
+    def candidate_page(request: Request, email: str):
+        board.refresh()
+        if not access.can_hire(current_user(request)):
+            raise HTTPException(403)
+        d = views.candidate_detail(board.db, email)
+        if not d:
+            raise HTTPException(404)
+        return render(request, "candidate", **d)
+
+    def hiring_api(request: Request, email: str, fn):
+        me = current_user(request)
+        if not access.can_hire(me):
+            return forbidden()
+        if not board.db.execute("SELECT 1 FROM candidates WHERE email = ?", (email,)).fetchone():
+            raise HTTPException(404)
+        return apply(lambda db: fn(db, me))
+
+    @app.post("/api/hiring/{email}/stage")
+    def candidate_stage(request: Request, email: str, body: StageBody):
+        return hiring_api(request, email, lambda db, me: hiring.set_stage(db, me, email, body.stage))
+
+    @app.post("/api/hiring/{email}/memo")
+    def candidate_memo(request: Request, email: str, body: MemoBody):
+        return hiring_api(request, email, lambda db, me: hiring.add_memo(db, me, email, body.body))
 
     @app.get("/settings", response_class=HTMLResponse)
     def settings(request: Request, v: int | None = None):
@@ -253,6 +314,7 @@ def create_app(cfg: config.Config | None = None) -> FastAPI:
         return render(
             request,
             "settings",
+            editable=access.is_manager(current_user(request)),
             definition=views.definition(board.db, v),
             assignments=views.assignments(board.db),
             people=views.people(board.db),
@@ -268,24 +330,29 @@ def create_app(cfg: config.Config | None = None) -> FastAPI:
             return JSONResponse({"error": str(e)}, 400)
         return {"ok": True, "result": result}
 
+    def manager_only(request: Request, fn, *args):
+        if not access.is_manager(current_user(request)):
+            return forbidden()
+        return apply(fn, *args)
+
     @app.post("/api/definition/item")
-    def save_item(body: ItemBody):
-        return apply(cfg_settings.save_item, body.version, body.axis, body.level, body.key, body.text, body.evidence)
+    def save_item(request: Request, body: ItemBody):
+        return manager_only(request, cfg_settings.save_item, body.version, body.axis, body.level, body.key, body.text, body.evidence)
 
     @app.post("/api/definition/item/delete")
-    def delete_item(body: ItemKey):
-        return apply(cfg_settings.delete_item, body.version, body.axis, body.level, body.key)
+    def delete_item(request: Request, body: ItemKey):
+        return manager_only(request, cfg_settings.delete_item, body.version, body.axis, body.level, body.key)
 
     @app.post("/api/definition/version")
-    def new_version():
-        return apply(cfg_settings.new_version)
+    def new_version(request: Request):
+        return manager_only(request, cfg_settings.new_version)
 
     @app.post("/api/people")
-    def set_person(body: PersonBody):
-        return apply(cfg_settings.set_person, body.email, body.evaluator, body.role)
+    def set_person(request: Request, body: PersonBody):
+        return manager_only(request, cfg_settings.set_person, body.email, body.evaluator, body.role, body.hiring)
 
     @app.post("/api/requisitions")
-    def set_requisition(body: RequisitionBody):
-        return apply(cfg_settings.set_requisition, body.name, body.count, body.target)
+    def set_requisition(request: Request, body: RequisitionBody):
+        return manager_only(request, cfg_settings.set_requisition, body.name, body.count, body.target)
 
     return app

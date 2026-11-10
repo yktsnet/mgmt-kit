@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}{{ candidate.name }} — 採用 — board{% endblock %}
+{% block head %}<h1><a href="/hiring" class="back">採用</a> / {{ candidate.name }}</h1>
+<span class="note">{{ candidate.requisition or '応募枠なし' }} · Ladder v{{ candidate.version }}{% if candidate.source %} · {{ candidate.source }}{% endif %}{% if candidate.applied %} · {{ candidate.applied }} に応募{% endif %}</span>{% endblock %}
+{% block main %}
+<section class="frame summary">
+  <div class="level">
+    <span class="label">Stage</span>
+    <span class="big stage-big">{{ row.stage }}</span>
+    <span class="hint">{% if stage %}{{ stage.at|when }} に変えた{% else %}シートを読んだときの段階{% endif %}</span>
+  </div>
+  <div class="axes">{% for a in AXES %}{% set r = row.levels.get(a) %}
+    <div class="axis {{ 'short' if a in row.short }}">
+      <span class="name"><b>{{ a }}</b> {{ AXIS_NAMES[a] }}</span>
+      <span class="val">{% if not r %}<span class="none">—</span>{% elif r.pending %}<span class="pending" title="判定の途中">…</span>{% elif r.level is none %}<span class="none" title="未観測">未観測</span>{% else %}L{{ r.level }}{% endif %}</span>
+      <span class="want">{% if a in target %}求める L{{ target[a] }}{% else %}求めない{% endif %}</span>
+    </div>{% endfor %}
+  </div>
+  <div class="state">
+    {% if moves %}<span class="buttons">{% for m in moves %}<button class="btn {{ 'primary' if loop.first and m not in ('不採用', '辞退') }}" type="button" data-stage="{{ m }}">{% if row.stage in ('不採用', '辞退') %}{{ m }} に戻す{% else %}{{ m }}{% endif %}</button>{% endfor %}</span>{% endif %}
+  </div>
+  {% if interviews and (row.short or row.ask) %}<p class="warn">次の面接で聞くこと：{% if row.short %}届いていない軸 {{ row.short|join('・') }}{% endif %}{% if row.short and row.ask %}、{% endif %}{% if row.ask %}未観測か途中の軸 {{ row.ask|join('・') }}{% endif %}</p>{% endif %}
+</section>
+
+<div class="columns">
+<div class="main-col">
+<section class="frame">
+  <div class="head"><h2>Interviews</h2><span class="note">面接の一覧はシート「面接」、判定はシート「面接1」「面接2」… に書く</span></div>
+  {% if interviews %}
+  <div class="scroll">
+  <table class="report">
+    <thead><tr><th class="num">回</th><th>日付</th><th>面接官</th><th class="num">判定した細目</th><th>所見</th></tr></thead>
+    <tbody>{% for iv in interviews %}<tr>
+      <td class="num">{{ iv.seq }}</td><td class="nowrap">{{ iv.date or '' }}</td>
+      <td class="nowrap">{{ iv.interviewer_name or iv.interviewer or '' }}</td>
+      <td class="num">{{ iv.judged }}</td><td class="note">{{ iv.note }}</td>
+    </tr>{% endfor %}</tbody>
+  </table>
+  </div>
+  {% else %}<p class="empty">まだ面接が無い。</p>{% endif %}
+</section>
+
+{% if interviews %}
+<section class="frame">
+  <div class="head"><h2>Items</h2><span class="note">細目ごとに、判定の入っている最も新しい面接の判定と根拠。L1 は下限で判定しない</span></div>
+  <div class="scroll">
+  <table class="grid">
+    <thead><tr><th class="lvcol"></th>{% for a in AXES %}<th>{{ a }}<span class="name">{{ AXIS_NAMES[a] }}</span></th>{% endfor %}</tr></thead>
+    <tbody>{% for lv in (5, 4, 3, 2) %}
+      <tr><td class="lvcol"><span class="lv">L{{ lv }}</span></td>
+      {% for a in AXES %}<td>
+        {% for it, v in cells.get((lv, a), []) %}<div class="item verdict {{ {'○': 'pass', '×': 'fail', '未観測': 'unobs'}.get(v.verdict) if v else 'blank' }}">
+          <span class="mark">{{ v.verdict if v else '' }}</span>
+          <span><span class="key">{{ it.key }}</span> {{ it.text }}{% if v %}<span class="ev"><b>面接{{ v.seq }}</b> {{ v.note }}</span>{% endif %}</span>
+        </div>{% endfor %}
+      </td>{% endfor %}</tr>
+    {% endfor %}</tbody>
+  </table>
+  </div>
+</section>
+{% endif %}
+</div>
+<aside class="side-col">
+<section class="frame" id="record">
+  <div class="head"><h2>Record</h2><span class="note">足すだけで、直したり消したりはしない</span></div>
+  <form class="memo" data-memo>
+    <textarea name="body" placeholder="選考で決めたこと、次の面接で確かめること" rows="3"></textarea>
+    <button class="btn primary" type="submit">Add</button>
+  </form>
+  {% if records %}
+  <ol class="timeline">{% for r in records %}
+    <li class="{{ r.kind }}"><span class="meta"><span class="by">{{ r.by_name or r.by }}</span><span class="at">{{ r.at|when }}</span></span>
+      {% if r.kind == 'stage' %}<span class="body"><span class="stage">{{ r.body }}</span></span>
+      {% else %}<span class="body note">{{ r.body }}</span>{% endif %}</li>
+  {% endfor %}</ol>
+  {% else %}<p class="empty">まだ記録が無い。</p>{% endif %}
+</section>
+</aside>
+</div>
+{% endblock %}
+{% block scripts %}<script src="/static/candidate.js" data-email="{{ candidate.email }}"></script>{% endblock %}

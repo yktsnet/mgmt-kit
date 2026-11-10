@@ -34,8 +34,8 @@ def _days(usage_dir: Path) -> list[dict]:
     return out
 
 
-def team(usage_dir: Path) -> dict | None:
-    """全員の図と、量と成果・使い方の表の行。トークン量の多い順に並べる（MD と同じ）。"""
+def team(usage_dir: Path, only: set[str] | None = None) -> dict | None:
+    """全員の図と、量と成果・使い方の表の行。トークン量の多い順に並べる（MD と同じ）。only を渡すと、その人たちだけにする。"""
     r = _render(usage_dir)
     days = _days(usage_dir)
     if not r or not days:
@@ -45,6 +45,10 @@ def team(usage_dir: Path) -> dict | None:
         return None
     accounts = json.loads((usage_dir / "github.json").read_text()) if (usage_dir / "github.json").is_file() else {}
     members = sorted({m for d in span if d in by_date for m in by_date[d]["members"]})
+    if only is not None:
+        members = [m for m in members if m in only]
+        if not members:
+            return None
     rows = []
     for m in members:
         u = r.usage(span, by_date, m)

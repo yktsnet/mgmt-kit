@@ -1,4 +1,4 @@
-"""設定（Ladder の定義と版、在籍者と Reviewer と役割、採用枠）を直す。設定はアプリが持ち、Drive には置かない。
+"""設定（Ladder の定義と版、在籍者と Reviewer と役割と採用を見られるか、採用枠）を直す。設定はアプリが持ち、Drive には置かない。
 
 直す前に、読むときと同じ決まりで確かめる。決まりに合わなければ SheetError を出す。
 """
@@ -23,9 +23,9 @@ def _items(db: sqlite3.Connection, version: int) -> list[Item]:
 
 
 def _check_unused(db: sqlite3.Connection, version: int) -> None:
-    # 評価が使った版を直すと、その評価の前提があとから変わる
-    if db.execute("SELECT 1 FROM reviews WHERE version = ? LIMIT 1", (version,)).fetchone():
-        raise SheetError(f"v{version} は評価に使われているので直せない。New version を作ってから直す")
+    # 評価や面接が使った版を直すと、その判定の前提があとから変わる
+    if version_in_use(db, version):
+        raise SheetError(f"v{version} は評価か面接に使われているので直せない。New version を作ってから直す")
 
 
 def _replace_version(db: sqlite3.Connection, version: int, items: list[Item]) -> None:
@@ -70,7 +70,9 @@ def new_version(db: sqlite3.Connection) -> int:
 
 
 def version_in_use(db: sqlite3.Connection, version: int) -> bool:
-    return db.execute("SELECT 1 FROM reviews WHERE version = ? LIMIT 1", (version,)).fetchone() is not None
+    return db.execute(
+        "SELECT 1 FROM reviews WHERE version = ? UNION ALL SELECT 1 FROM candidates WHERE version = ? LIMIT 1", (version, version)
+    ).fetchone() is not None
 
 
 # ---- 在籍者
@@ -80,7 +82,7 @@ def _people_rows(db: sqlite3.Connection) -> list[sqlite3.Row]:
     return db.execute("SELECT * FROM people ORDER BY rowid").fetchall()
 
 
-def set_person(db: sqlite3.Connection, email: str, evaluator: str | None = None, role: str | None = None) -> None:
+def set_person(db: sqlite3.Connection, email: str, evaluator: str | None = None, role: str | None = None, hiring: bool | None = None) -> None:
     people = _people_rows(db)
     if not any(p["email"] == email for p in people):
         raise SheetError(f"{email} は在籍者にいない")
@@ -95,6 +97,8 @@ def set_person(db: sqlite3.Connection, email: str, evaluator: str | None = None,
             db.execute("UPDATE people SET evaluator = ? WHERE email = ?", (evaluator or None, email))
         if role is not None:
             db.execute("UPDATE people SET role = ? WHERE email = ?", (role, email))
+        if hiring is not None:
+            db.execute("UPDATE people SET hiring = ? WHERE email = ?", (int(hiring), email))
 
 
 # ---- 採用枠
@@ -128,8 +132,8 @@ def seed(db: sqlite3.Connection, ladder_md: Path, demo: bool) -> None:
 
         if db.execute("SELECT 1 FROM people LIMIT 1").fetchone() is None:
             db.executemany(
-                "INSERT INTO people (email, name, evaluator, role) VALUES (?, ?, ?, ?)",
-                [(p.email, p.name, p.evaluator or None, p.role) for p in d.people()],
+                "INSERT INTO people (email, name, evaluator, role, hiring) VALUES (?, ?, ?, ?, ?)",
+                [(p.email, p.name, p.evaluator or None, p.role, int(p.hiring)) for p in d.people()],
             )
         if db.execute("SELECT 1 FROM requisitions LIMIT 1").fetchone() is None:
             for name, count, persona, target in d.REQUISITIONS:
@@ -138,3 +142,10 @@ def seed(db: sqlite3.Connection, ladder_md: Path, demo: bool) -> None:
                     "INSERT INTO requisition_targets (name, axis, value) VALUES (?, ?, ?)",
                     [(name, a, v) for a, v in zip(AXES, target) if v is not None],
                 )
+        if db.execute("SELECT 1 FROM candidate_stages LIMIT 1").fetchone() is None:
+            at = "2026-04-20T09:00:00+00:00"
+            by = d.email(next(iter(d.MANAGERS)))
+            for name, stages in d.CANDIDATE_STAGES.items():
+                for stage in stages:
+                    db.execute("INSERT INTO candidate_records (email, at, by, kind, body) VALUES (?, ?, ?, 'stage', ?)", (d.email(name), at, by, stage))
+                db.execute("INSERT INTO candidate_stages (email, stage, at, by) VALUES (?, ?, ?, ?)", (d.email(name), stages[-1], at, by))

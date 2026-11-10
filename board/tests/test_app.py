@@ -37,7 +37,7 @@ def test_settings_shows_definition_assignments_and_requisitions(client):
 
 def test_version_used_by_reviews_is_locked_until_new_version(client):
     html = client.get("/settings").text
-    assert "評価に使われている版" in html
+    assert "評価か面接に使われている版" in html
     assert client.post("/api/definition/item", json={"version": 1, "axis": "A", "level": 3, "key": "a", "text": "x"}).status_code == 400
     assert client.post("/api/definition/version").json()["result"] == 2
     r = client.post("/api/definition/item", json={"version": 2, "axis": "A", "level": 3, "key": "a", "text": "v2 で直した細目。"})

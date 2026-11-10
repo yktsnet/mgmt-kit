@@ -127,7 +127,7 @@
     }
   });
 
-  // ---- Reviewer と Role
+  // ---- Reviewer と Role と Hiring
   document.querySelectorAll('select[data-action="evaluator"], select[data-action="role"]').forEach((sel) => {
     const before = sel.value;
     sel.addEventListener("change", async () => {
@@ -137,6 +137,17 @@
         reload("Saved", "people");
       } catch (err) {
         sel.value = before;
+        say(err.message, true);
+      }
+    });
+  });
+  document.querySelectorAll('input[data-action="hiring"]').forEach((box) => {
+    box.addEventListener("change", async () => {
+      try {
+        await post("/api/people", { email: box.dataset.email, hiring: box.checked });
+        reload("Saved", "people");
+      } catch (err) {
+        box.checked = !box.checked;
         say(err.message, true);
       }
     });

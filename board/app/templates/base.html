@@ -12,7 +12,7 @@
     <a class="brand" href="/">board</a>
     <a href="/reviews" class="tab {{ 'on' if page in ('reviews', 'review') }}">評価</a>
     <a href="/now" class="tab {{ 'on' if page == 'now' }}">現在地</a>
-    <span class="off" title="準備中">採用</span>
+    {% if can_hire %}<a href="/hiring" class="tab {{ 'on' if page in ('hiring', 'candidate') }}">採用</a>{% endif %}
     <span class="spacer"></span>
     <a href="/settings" class="tab {{ 'on' if page == 'settings' }}" {% if page == 'settings' %}aria-current="page"{% endif %}>設定</a>
     {% if me %}<form class="me" method="post" action="/auth/logout"><span>{{ me.name }}{% if me.role == 'manager' %}<span class="role">Manager</span>{% endif %}</span><button class="btn link" type="submit">Sign out</button></form>{% endif %}

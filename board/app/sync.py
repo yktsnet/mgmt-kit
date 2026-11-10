@@ -4,8 +4,9 @@ import logging
 import sqlite3
 from dataclasses import dataclass, field
 
+from .hiring import parse_candidate, store_candidate
+from .parse import SheetError
 from .review import parse_review, store_review
-from .parse import SheetError, parse_candidate
 from .sources import FileRef, Source
 
 logger = logging.getLogger(__name__)
@@ -70,7 +71,6 @@ def sync(source: Source, db: sqlite3.Connection) -> SyncResult:
                 _upsert_file(db, ref, kind_of(ref), str(e))
                 _clear(db, ref.id)
                 result.errors[ref.path] = str(e)
-        _drop_orphan_scores(db)
     return result
 
 
@@ -92,35 +92,7 @@ def _store(db: sqlite3.Connection, ref: FileRef, kind: str | None, book) -> None
     _upsert_file(db, ref, kind, None)
     _clear(db, ref.id)
     if kind == "candidate":
-        c = parse_candidate(book)
-        newer = db.execute(
-            "SELECT 1 FROM candidates JOIN files ON files.id = candidates.file_id "
-            "WHERE candidates.email = ? AND files.id != ? AND files.modified > ?",
-            (c.email, ref.id, ref.modified),
-        ).fetchone()
-        if newer:
-            return
-        db.execute("DELETE FROM candidates WHERE email = ?", (c.email,))
-        db.execute(
-            "INSERT INTO candidates (email, file_id, name, requisition, stage, applied, source) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (c.email, ref.id, c.name, c.requisition, c.stage, c.applied and c.applied.isoformat(), c.source),
-        )
-        for seq, iv in enumerate(c.interviews):
-            db.execute(
-                "INSERT INTO interviews (email, seq, date, interviewer, note) VALUES (?, ?, ?, ?, ?)",
-                (c.email, seq, iv.date and iv.date.isoformat(), iv.interviewer, iv.note),
-            )
-        db.execute("DELETE FROM scores WHERE email = ? AND origin = 'interview'", (c.email,))
-        db.executemany(
-            "INSERT INTO scores (email, origin, axis, value) VALUES (?, 'interview', ?, ?)",
-            [(c.email, a, v) for a, v in c.scores().items()],
-        )
+        store_candidate(db, ref.id, ref.modified, parse_candidate(book))
     elif kind == "review":
         store_review(db, ref.id, parse_review(book))
 
-
-
-def _drop_orphan_scores(db: sqlite3.Connection) -> None:
-    db.execute(
-        "DELETE FROM scores WHERE origin = 'interview' AND email NOT IN (SELECT email FROM candidates)"
-    )
