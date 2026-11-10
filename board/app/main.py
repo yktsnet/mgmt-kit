@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import auth, config, settings as cfg_settings, views
+from . import auth, config, settings as cfg_settings, views, workflow
 from .ladder import sync_ladder
 from .parse import AXES, SheetError
 from .sources.xlsx_folder import XlsxFolderSource
@@ -76,6 +76,24 @@ class ItemBody(BaseModel):
     evidence: str = ""
 
 
+def _when(iso: str | None) -> str:
+    """UTC の ISO 形式を、手元の時刻の「11/10 23:20」にする。"""
+    if not iso:
+        return ""
+    try:
+        return dt.datetime.fromisoformat(iso).astimezone().strftime("%m/%d %H:%M")
+    except ValueError:
+        return iso
+
+
+class ActionBody(BaseModel):
+    action: str
+
+
+class MemoBody(BaseModel):
+    body: str
+
+
 class PersonBody(BaseModel):
     email: str
     evaluator: str | None = None
@@ -95,6 +113,7 @@ def create_app(cfg: config.Config | None = None) -> FastAPI:
     app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
     templates = Jinja2Templates(directory=HERE / "templates")
     templates.env.globals.update(AXES=AXES, AXIS_NAMES=AXIS_NAMES)
+    templates.env.filters["when"] = _when
 
     def current_user(request: Request):
         email = auth.verify(board.cfg.session_key, request.cookies.get(auth.COOKIE))
@@ -186,7 +205,21 @@ def create_app(cfg: config.Config | None = None) -> FastAPI:
         d = views.review_detail(board.db, period, email)
         if not d:
             raise HTTPException(404)
-        return render(request, "review", period=period, **d)
+        acts = workflow.allowed(board.db, current_user(request), email, period, d["row"].status == "ready") if d["review"] else []
+        return render(request, "review", period=period, actions=acts, **d)
+
+    @app.post("/api/reviews/{period}/{email}/action")
+    def review_action(request: Request, period: str, email: str, body: ActionBody):
+        d = views.review_detail(board.db, period, email)
+        if not d or not d["review"]:
+            raise HTTPException(404)
+        return apply(lambda db: workflow.act(db, current_user(request), email, period, body.action, d["row"].status == "ready"))
+
+    @app.post("/api/reviews/{period}/{email}/memo")
+    def review_memo(request: Request, period: str, email: str, body: MemoBody):
+        if not views.review_detail(board.db, period, email):
+            raise HTTPException(404)
+        return apply(lambda db: workflow.add_memo(db, current_user(request), email, period, body.body))
 
     @app.get("/settings", response_class=HTMLResponse)
     def settings(request: Request, v: int | None = None):

@@ -9,7 +9,9 @@ CREATE TABLE IF NOT EXISTS files (
   path TEXT NOT NULL,
   modified TEXT NOT NULL,
   kind TEXT NOT NULL,
-  error TEXT
+  error TEXT,
+  -- 最後に直した人。Drive からだけ取れる
+  modified_by TEXT
 );
 CREATE TABLE IF NOT EXISTS candidates (
   email TEXT PRIMARY KEY,
@@ -110,6 +112,24 @@ CREATE TABLE IF NOT EXISTS verdicts (
   note TEXT NOT NULL,
   PRIMARY KEY (file_id, item)
 );
+-- 評価の状態と記録はアプリが持つ。シートから作り直す写しではないので、同期では消さない
+CREATE TABLE IF NOT EXISTS review_states (
+  email TEXT NOT NULL,
+  period TEXT NOT NULL,
+  state TEXT NOT NULL,
+  at TEXT NOT NULL,
+  by TEXT NOT NULL,
+  PRIMARY KEY (email, period)
+);
+CREATE TABLE IF NOT EXISTS review_records (
+  id INTEGER PRIMARY KEY,
+  email TEXT NOT NULL,
+  period TEXT NOT NULL,
+  at TEXT NOT NULL,
+  by TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  body TEXT NOT NULL
+);
 """
 
 
@@ -118,4 +138,8 @@ def connect(path: Path | str) -> sqlite3.Connection:
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA foreign_keys = ON")
     db.executescript(SCHEMA)
+    # 前の形で作った DB に、あとから足した列を足す
+    cols = {r[1] for r in db.execute("PRAGMA table_info(files)")}
+    if "modified_by" not in cols:
+        db.execute("ALTER TABLE files ADD COLUMN modified_by TEXT")
     return db

@@ -75,7 +75,10 @@ def people(db: sqlite3.Connection) -> list[sqlite3.Row]:
 class ReviewRow:
     email: str
     name: str
-    status: str  # not-started / in-progress / done
+    # 判定の埋まり方：not-started / in-progress / ready（段階が出そろった）
+    status: str
+    # アプリが持つ状態：draft / submitted / approved
+    state: str
     judged: int
     total: int
     levels: dict[str, "object"]
@@ -93,15 +96,19 @@ def periods(db: sqlite3.Connection) -> list[str]:
     return [r[0] for r in db.execute("SELECT DISTINCT period FROM reviews ORDER BY period")]
 
 
-def _row(db: sqlite3.Connection, person: sqlite3.Row, file_id: str | None) -> ReviewRow:
+def _row(db: sqlite3.Connection, person: sqlite3.Row, file_id: str | None, period: str | None = None) -> ReviewRow:
     from .review import person_level, results_for
 
+    from .workflow import DRAFT, state_of
+
+    st = state_of(db, person["email"], period) if period else None
+    state = st["state"] if st else DRAFT
     if not file_id:
-        return ReviewRow(person["email"], person["name"], "not-started", 0, 0, {}, None, None)
+        return ReviewRow(person["email"], person["name"], "not-started", state, 0, 0, {}, None, None)
     results, judged, total = results_for(db, file_id)
     pending = any(r.pending for r in results.values())
-    status = "done" if not pending else ("in-progress" if judged else "not-started")
-    return ReviewRow(person["email"], person["name"], status, judged, total, results, person_level(results), file_id)
+    status = "ready" if not pending else ("in-progress" if judged else "not-started")
+    return ReviewRow(person["email"], person["name"], status, state, judged, total, results, person_level(results), file_id)
 
 
 def reviews(db: sqlite3.Connection, period: str | None) -> list[ReviewerGroup]:
@@ -110,7 +117,7 @@ def reviews(db: sqlite3.Connection, period: str | None) -> list[ReviewerGroup]:
     by_email = {p["email"]: p for p in people}
     groups: dict[str | None, list[ReviewRow]] = {}
     for p in people:
-        groups.setdefault(p["evaluator"], []).append(_row(db, p, files.get(p["email"])))
+        groups.setdefault(p["evaluator"], []).append(_row(db, p, files.get(p["email"]), period))
     out = [ReviewerGroup(by_email.get(ev), rows) for ev, rows in groups.items() if ev]
     out.sort(key=lambda g: g.reviewer["name"] if g.reviewer else "")
     if None in groups:
@@ -127,7 +134,8 @@ def review_detail(db: sqlite3.Connection, period: str, email: str):
     if not person:
         return None
     r = db.execute("SELECT * FROM reviews WHERE period = ? AND email = ?", (period, email)).fetchone()
-    row = _row(db, person, r["file_id"] if r else None)
+    row = _row(db, person, r["file_id"] if r else None, period)
+    sheet = db.execute("SELECT modified, modified_by FROM files WHERE id = ?", (r["file_id"],)).fetchone() if r else None
     cells: dict[tuple[int, str], list] = {}
     if r:
         verdicts = {v["item"]: v for v in db.execute("SELECT * FROM verdicts WHERE file_id = ?", (r["file_id"],))}
@@ -135,4 +143,9 @@ def review_detail(db: sqlite3.Connection, period: str, email: str):
             if it["level"] in JUDGED_LEVELS:
                 v = verdicts.get(f"{it['axis']}-L{it['level']}-{it['key']}")
                 cells.setdefault((it["level"], it["axis"]), []).append((it, v))
-    return {"person": person, "review": r, "row": row, "cells": cells}
+    from .workflow import records, state_of
+
+    st = state_of(db, email, period)
+    # Submit したあとでシートが直されたら、出した内容と画面の判定がずれている
+    edited_after = bool(st and sheet and st["state"] != "draft" and sheet["modified"] > st["at"])
+    return {"person": person, "review": r, "row": row, "cells": cells, "sheet": sheet, "state": st, "edited_after": edited_after, "records": records(db, email, period)}

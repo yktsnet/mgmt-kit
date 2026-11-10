@@ -13,6 +13,8 @@ class FileRef:
     # ルートのフォルダからの相対パス。拡張子は付けない（Drive のスプレッドシートには拡張子が無い）
     path: str
     modified: str
+    # 最後に直した人の名前。手元のフォルダでは分からない
+    modified_by: str = ""
 
 
 class Source(Protocol):
