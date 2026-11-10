@@ -62,6 +62,21 @@ CREATE TABLE IF NOT EXISTS personas (
   value INTEGER NOT NULL,
   PRIMARY KEY (level, axis)
 );
+-- usage の直近 WINDOW_DAYS 日の合計。人が書く値ではないので、集計のたびに作り直す
+CREATE TABLE IF NOT EXISTS usage (
+  email TEXT PRIMARY KEY,
+  since TEXT NOT NULL,
+  until TEXT NOT NULL,
+  active_days INTEGER NOT NULL,
+  cost_usd REAL NOT NULL,
+  active_seconds INTEGER NOT NULL,
+  sessions INTEGER NOT NULL,
+  commits INTEGER NOT NULL,
+  pull_requests INTEGER NOT NULL,
+  lines_added INTEGER NOT NULL,
+  skills INTEGER NOT NULL,
+  issues_opened INTEGER NOT NULL
+);
 """
 
 
