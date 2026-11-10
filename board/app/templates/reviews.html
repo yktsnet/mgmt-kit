@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "_level.html" import axis, status %}
+{% block title %}評価 — board{% endblock %}
+{% block head %}<h1>評価</h1><span class="note">Reviewer ごとの進み具合と、一人ずつの段階。判定は Drive の <code>reviews/{{ period or '<期>' }}/</code> のシートに書く</span>{% endblock %}
+{% block main %}
+{% if periods|length > 1 %}
+<div class="versions">{% for p in periods %}{% if p == period %}<b>{{ p }}</b>{% else %}<a href="?period={{ p }}">{{ p }}</a>{% endif %}{% endfor %}</div>
+{% endif %}
+
+{% for g in groups %}
+{% set done = g.rows|selectattr('status', 'equalto', 'done')|list|length %}
+<section class="frame">
+  <div class="head">
+    <h2>{% if g.reviewer %}{{ g.reviewer.name }}{% else %}Reviewer 未割り当て{% endif %}</h2>
+    <span class="note">{% if g.reviewer %}{{ done }} / {{ g.rows|length }} done{% else %}設定で Reviewer を決めると評価を始められる{% endif %}</span>
+  </div>
+  <div class="scroll">
+  <table class="fit">
+    <thead><tr><th>Member</th><th>Status</th><th class="num">Items</th>{% for a in AXES %}<th class="ax" title="{{ AXIS_NAMES[a] }}">{{ a }}</th>{% endfor %}<th class="ax">Level</th></tr></thead>
+    <tbody>{% for r in g.rows %}
+      <tr>
+        <td class="nowrap">{% if r.file_id %}<a href="/reviews/{{ period }}/{{ r.email }}">{{ r.name }}</a>{% else %}{{ r.name }}{% endif %}</td>
+        <td>{{ status(r.status) }}</td>
+        <td class="num muted nowrap">{% if r.status == 'in-progress' %}{{ r.judged }} / {{ r.total }}{% endif %}</td>
+        {% for a in AXES %}<td class="ax">{{ axis(r.levels.get(a)) }}</td>{% endfor %}
+        <td class="ax">{% if r.level %}<span class="lv">L{{ r.level }}</span>{% else %}<span class="lvx none">—</span>{% endif %}</td>
+      </tr>
+    {% endfor %}</tbody>
+  </table>
+  </div>
+</section>
+{% else %}
+<section class="frame"><p class="empty">在籍者が設定に無い。</p></section>
+{% endfor %}
+<p class="legend">… は判定の途中、— は未観測かまだ決まっていない。Level は A と B の低いほう</p>
+{% endblock %}

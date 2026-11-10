@@ -1,0 +1,9 @@
+{%- macro axis(r) -%}
+{%- if not r -%}<span class="lvx none">—</span>
+{%- elif r.pending -%}<span class="lvx pending" title="判定の途中">…</span>
+{%- elif r.level is none -%}<span class="lvx none" title="未観測">—</span>
+{%- else -%}<span class="lvx">{{ r.level }}</span>{%- endif -%}
+{%- endmacro -%}
+{%- macro status(s) -%}
+<span class="status {{ s }}">{{ {'not-started': 'Not started', 'in-progress': 'In progress', 'done': 'Done'}[s] }}</span>
+{%- endmacro -%}

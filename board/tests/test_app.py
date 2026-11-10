@@ -30,9 +30,6 @@ def save_later(wb, path):
     os.utime(path, (t, t))
 
 
-def test_home_goes_to_settings(client):
-    r = client.get("/", follow_redirects=False)
-    assert r.headers["location"] == "/settings"
 
 
 def test_settings_shows_definition_assignments_and_requisitions(client):

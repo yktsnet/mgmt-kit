@@ -6,7 +6,7 @@ import threading
 import time
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
@@ -103,8 +103,23 @@ def create_app(cfg: config.Config | None = None) -> FastAPI:
 
     @app.get("/")
     def home():
-        # 評価のタブができるまでは設定を入口にする
-        return RedirectResponse("/settings")
+        return RedirectResponse("/reviews")
+
+    @app.get("/reviews", response_class=HTMLResponse)
+    def reviews(request: Request, period: str | None = None):
+        board.refresh()
+        ps = views.periods(board.db)
+        if period not in ps:
+            period = ps[-1] if ps else None
+        return render(request, "reviews", periods=ps, period=period, groups=views.reviews(board.db, period))
+
+    @app.get("/reviews/{period}/{email}", response_class=HTMLResponse)
+    def review(request: Request, period: str, email: str):
+        board.refresh()
+        d = views.review_detail(board.db, period, email)
+        if not d:
+            raise HTTPException(404)
+        return render(request, "review", period=period, **d)
 
     @app.get("/settings", response_class=HTMLResponse)
     def settings(request: Request, v: int | None = None):
