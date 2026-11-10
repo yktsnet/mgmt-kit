@@ -3,7 +3,7 @@
 board を直す担当が、どこに何があり、何を守るかを知るための文書。
 
 ladder の5軸で、評価・現在地・採用を1つのウェブアプリで回す。方針と決めたことは
-[#15](https://github.com/yktsnet/mgmt-kit/issues/15) にある。FastAPI と Jinja2 の HTML で作り、フロントエンドのビルドは持たない。
+[docs/decisions.md](docs/decisions.md) にある。FastAPI と Jinja2 の HTML で作り、フロントエンドのビルドは持たない。
 
 ## 動かす
 
@@ -57,7 +57,7 @@ ladder の採点結果・usage の JSON ─────────────�
 ## 決まり
 
 - **段階の決め方は1か所にある。** 決め方は [docs/sheets.md](docs/sheets.md) の「評価」、実装は `review.axis_result` で、評価も採用もこれを使う
-- **版は、評価か面接が使ったら直せない。** `settings.version_in_use` で確かめる
+- **版を直せるかは `settings.version_in_use` で確かめる。** 直せない条件は [docs/decisions.md](docs/decisions.md) にある
 - **誤りは `SheetError` で返す。** 読み込みでは1ファイルだけを飛ばして画面に出し、API では 400 にする。権限が無いときは 403 にする
 - **時刻は UTC の ISO 形式で持ち、画面で手元の時刻にする**（`main._when`）
 - **シートの形を変えたら、`docs/sheets.md`・`scripts/make_samples.py`・`samples/` を一緒に直す。** `samples/` は `python scripts/make_samples.py` で作り直す
