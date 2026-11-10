@@ -15,6 +15,7 @@
     <span class="off" title="準備中">採用</span>
     <span class="spacer"></span>
     <a href="/settings" class="tab {{ 'on' if page == 'settings' }}" {% if page == 'settings' %}aria-current="page"{% endif %}>設定</a>
+    {% if me %}<form class="me" method="post" action="/auth/logout"><span>{{ me.name }}{% if me.role == 'manager' %}<span class="role">Manager</span>{% endif %}</span><button class="btn link" type="submit">Sign out</button></form>{% endif %}
   </div>
 </nav>
 <div class="wrap">

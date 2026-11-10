@@ -27,8 +27,19 @@ class Config:
     # 設定が空のときに、デモの在籍者と採用枠を入れる
     demo: bool
     ladder_md: Path
+    google_client_id: str
+    allowed_domain: str
+    session_key: bytes
     # この秒数より前に読んでいれば、画面を開いたときに読み直す
     sync_interval: float
+
+
+def _session_key() -> bytes:
+    key = os.environ.get("BOARD_SESSION_KEY", "")
+    if key:
+        return key.encode()
+    # 鍵を設定しないと、起動のたびにログインの状態が切れる。デモではそれで困らない
+    return os.urandom(32)
 
 
 def load() -> Config:
@@ -48,5 +59,8 @@ def load() -> Config:
         db_path=os.environ.get("BOARD_DB", str(BOARD / "data" / "board.db")),
         demo=os.environ.get("BOARD_DEMO", "1" if source == "xlsx" else "0") == "1",
         ladder_md=_path("BOARD_LADDER_MD", REPO / "ladder" / "docs" / "ladder.md"),
+        google_client_id=os.environ.get("BOARD_GOOGLE_CLIENT_ID", ""),
+        allowed_domain=os.environ.get("BOARD_ALLOWED_DOMAIN", "example.com").lower(),
+        session_key=_session_key(),
         sync_interval=float(os.environ.get("BOARD_SYNC_INTERVAL", "3" if source == "xlsx" else "60")),
     )

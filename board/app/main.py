@@ -6,13 +6,13 @@ import threading
 import time
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import config, settings as cfg_settings, views
+from . import auth, config, settings as cfg_settings, views
 from .ladder import sync_ladder
 from .parse import AXES, SheetError
 from .sources.xlsx_folder import XlsxFolderSource
@@ -96,8 +96,71 @@ def create_app(cfg: config.Config | None = None) -> FastAPI:
     templates = Jinja2Templates(directory=HERE / "templates")
     templates.env.globals.update(AXES=AXES, AXIS_NAMES=AXIS_NAMES)
 
+    def current_user(request: Request):
+        email = auth.verify(board.cfg.session_key, request.cookies.get(auth.COOKIE))
+        if not email:
+            return None
+        return board.db.execute("SELECT * FROM people WHERE email = ?", (email,)).fetchone()
+
+    @app.middleware("http")
+    async def require_login(request: Request, call_next):
+        path = request.url.path
+        if path.startswith(("/static/", "/login", "/auth/")) or current_user(request):
+            return await call_next(request)
+        if path.startswith("/api/"):
+            return JSONResponse({"error": "ログインしてください"}, 401)
+        return RedirectResponse("/login")
+
+    def login_page(request: Request, error: str = ""):
+        people = board.db.execute("SELECT email, name, role FROM people ORDER BY rowid").fetchall() if board.cfg.demo else []
+        return templates.TemplateResponse(
+            request, "login.html",
+            {"demo": board.cfg.demo, "people": people, "client_id": board.cfg.google_client_id, "domain": board.cfg.allowed_domain, "error": error},
+            status_code=403 if error else 200,
+        )
+
+    def signed_in(email: str):
+        res = RedirectResponse("/", status_code=303)
+        # デモは http で開くので Secure を付けない
+        res.set_cookie(auth.COOKIE, auth.issue(board.cfg.session_key, email), max_age=auth.SESSION_TTL, httponly=True, samesite="lax", secure=not board.cfg.demo)
+        return res
+
+    def known(email: str) -> bool:
+        return board.db.execute("SELECT 1 FROM people WHERE email = ?", (email,)).fetchone() is not None
+
+    @app.get("/login", response_class=HTMLResponse)
+    def login(request: Request):
+        return login_page(request)
+
+    @app.post("/auth/google")
+    def auth_google(request: Request, credential: str = Form(...)):
+        if not board.cfg.google_client_id:
+            raise HTTPException(404)
+        email = auth.verify_google(credential, board.cfg.google_client_id, board.cfg.allowed_domain)
+        if not email:
+            return login_page(request, f"@{board.cfg.allowed_domain} の Google Workspace のアカウントでログインしてください")
+        if not known(email):
+            return login_page(request, f"{email} は在籍者にいません。設定の在籍者に足してもらってください")
+        return signed_in(email)
+
+    @app.post("/auth/demo")
+    def auth_demo(request: Request, email: str = Form(...)):
+        # デモのときだけ開く入口。Google を通らない
+        if not board.cfg.demo:
+            raise HTTPException(404)
+        if not known(email):
+            return login_page(request, "在籍者にいない人は選べません")
+        return signed_in(email)
+
+    @app.post("/auth/logout")
+    def logout():
+        res = RedirectResponse("/login", status_code=303)
+        res.delete_cookie(auth.COOKIE)
+        return res
+
     def render(request: Request, name: str, **ctx) -> HTMLResponse:
         ctx.update(
+            me=current_user(request),
             errors=views.errors(board.db),
             synced=board.synced_label,
             source="Drive" if board.cfg.source == "drive" else "手元のフォルダ",
