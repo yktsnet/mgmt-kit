@@ -7,24 +7,27 @@
 <link rel="stylesheet" href="/static/board.css">
 </head>
 <body>
-<header class="bar">
-  <span class="name">board</span>
-  <nav>
+<nav class="top" aria-label="全体">
+  <div class="inner">
+    <span class="brand">board</span>
     <span class="off" title="準備中">評価</span>
     <span class="off" title="準備中">育成</span>
     <span class="off" title="準備中">採用</span>
-    <a href="/settings" class="{{ 'on' if page == 'settings' }}">設定</a>
-  </nav>
-  <span class="meta">{{ source }}から {{ synced }} に読み込み</span>
-</header>
-<main>
-{% if errors %}
-<div class="errors">
-  <b>読めなかったファイルが {{ errors|length }} 件あります。</b>直して保存すると、次に開いたときに読み直します。
-  <ul>{% for e in errors %}<li><code>{{ e.path }}</code> — {{ e.error }}</li>{% endfor %}</ul>
+    <span class="spacer"></span>
+    <a href="/settings" class="tab {{ 'on' if page == 'settings' }}" {% if page == 'settings' %}aria-current="page"{% endif %}>設定</a>
+  </div>
+</nav>
+<div class="wrap">
+  <div class="pagehead">{% block head %}{% endblock %}<span class="meta">{{ source }}から {{ synced }} に読み込み</span></div>
+  {% if errors %}
+  <section class="frame errors">
+    <div class="head"><h2>読めなかったファイルが {{ errors|length }} 件ある</h2><span class="note">直して保存すると、次に開いたときに読み直す</span></div>
+    <ul>{% for e in errors %}<li><code>{{ e.path }}</code> — {{ e.error }}</li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+  {% block main %}{% endblock %}
 </div>
-{% endif %}
-{% block main %}{% endblock %}
-</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+{% block scripts %}{% endblock %}
 </body>
 </html>

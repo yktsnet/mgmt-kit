@@ -11,6 +11,7 @@ from .parse import AXES, SheetError, _table, _text
 from .sources import Book
 
 LEVELS = (1, 2, 3, 4, 5)
+DEFINITION_HEADER = ["軸", "段階", "細目", "判定文", "読むもの"]
 VERSION = re.compile(r"v(\d+)")
 
 

@@ -57,3 +57,10 @@ def requisitions(db: sqlite3.Connection) -> list[tuple[sqlite3.Row, list[int | N
 
 def errors(db: sqlite3.Connection) -> list[sqlite3.Row]:
     return db.execute("SELECT path, error FROM files WHERE error IS NOT NULL ORDER BY path").fetchall()
+
+
+def people(db: sqlite3.Connection) -> list[sqlite3.Row]:
+    return db.execute(
+        "SELECT p.email, p.name, p.evaluator, e.name AS evaluator_name FROM people p "
+        "LEFT JOIN people e ON e.email = p.evaluator ORDER BY p.rowid"
+    ).fetchall()

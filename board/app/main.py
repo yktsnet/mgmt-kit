@@ -7,13 +7,14 @@ import time
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import config, views
+from . import config, edit, views
 from .ladder import sync_ladder
-from .parse import AXES
+from .parse import AXES, SheetError
 from .sources.xlsx_folder import XlsxFolderSource
 from .store import connect
 from .sync import sync
@@ -56,6 +57,33 @@ class Board:
             self.synced_label = dt.datetime.now().strftime("%H:%M:%S")
 
 
+class ItemKey(BaseModel):
+    version: int
+    axis: str
+    level: int
+    key: str
+
+
+class ItemBody(BaseModel):
+    version: int
+    axis: str
+    level: int
+    key: str | None = None
+    text: str
+    evidence: str = ""
+
+
+class EvaluatorBody(BaseModel):
+    email: str
+    evaluator: str = ""
+
+
+class RequisitionBody(BaseModel):
+    name: str
+    count: int
+    target: dict[str, int | None]
+
+
 def create_app(cfg: config.Config | None = None) -> FastAPI:
     board = Board(cfg or config.load())
     app = FastAPI(title="board", docs_url=None, redoc_url=None)
@@ -86,7 +114,43 @@ def create_app(cfg: config.Config | None = None) -> FastAPI:
             "settings",
             definition=views.definition(board.db, v),
             assignments=views.assignments(board.db),
+            people=views.people(board.db),
             requisitions=views.requisitions(board.db),
         )
+
+    def apply(fn, *args):
+        """シートへ書き戻し、すぐ読み直す。直されていたら 409、決まりに合わなければ 400 を返す。
+
+        書く前には読み直さない。読み直すと、画面が読んだあとの変更を取り込んでしまい、食い違いに気づけない。
+        """
+        try:
+            with board.lock:
+                result = fn(board.source, board.db, *args)
+        except edit.Conflict:
+            return JSONResponse({"error": "シートがほかで直されています。画面を読み直してから、もう一度直してください。"}, 409)
+        except SheetError as e:
+            return JSONResponse({"error": str(e)}, 400)
+        board.refresh(force=True)
+        return {"ok": True, "result": result}
+
+    @app.post("/api/definition/item")
+    def save_item(body: ItemBody):
+        return apply(edit.save_item, body.version, body.axis, body.level, body.key, body.text, body.evidence)
+
+    @app.post("/api/definition/item/delete")
+    def delete_item(body: ItemKey):
+        return apply(edit.delete_item, body.version, body.axis, body.level, body.key)
+
+    @app.post("/api/definition/version")
+    def new_version():
+        return apply(edit.new_version)
+
+    @app.post("/api/people/evaluator")
+    def set_evaluator(body: EvaluatorBody):
+        return apply(edit.set_evaluator, body.email, body.evaluator)
+
+    @app.post("/api/requisitions")
+    def set_requisition(body: RequisitionBody):
+        return apply(edit.set_requisition, body.name, body.count, body.target)
 
     return app

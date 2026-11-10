@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from .parse import SheetError, _sheet, _table, _text
 from .sources import Book
 
+PEOPLE_HEADER = ["メール", "氏名", "担当"]
+
 
 @dataclass(frozen=True)
 class Person:

@@ -14,7 +14,8 @@ FOLDER = "application/vnd.google-apps.folder"
 SPREADSHEET = "application/vnd.google-apps.spreadsheet"
 SCOPES = [
     "https://www.googleapis.com/auth/drive.metadata.readonly",
-    "https://www.googleapis.com/auth/spreadsheets.readonly",
+    # 設定の画面で直した値をシートへ書き戻す
+    "https://www.googleapis.com/auth/spreadsheets",
 ]
 
 
@@ -74,6 +75,25 @@ class DriveSource:
         )
         res.raise_for_status()
         return {s["properties"]["title"]: _rows(s) for s in res.json().get("sheets", [])}
+
+
+    def write(self, ref: FileRef, sheet: str, rows: list[list[Any]]) -> None:
+        meta = self.session.get(f"{SHEETS}/{ref.id}", params={"fields": "sheets(properties(title))"})
+        meta.raise_for_status()
+        titles = {s["properties"]["title"] for s in meta.json().get("sheets", [])}
+        if sheet not in titles:
+            res = self.session.post(
+                f"{SHEETS}/{ref.id}:batchUpdate", json={"requests": [{"addSheet": {"properties": {"title": sheet}}}]}
+            )
+            res.raise_for_status()
+        rng = f"'{sheet}'"
+        self.session.post(f"{SHEETS}/{ref.id}/values/{rng}:clear").raise_for_status()
+        res = self.session.put(
+            f"{SHEETS}/{ref.id}/values/{rng}!A1",
+            params={"valueInputOption": "RAW"},
+            json={"values": [["" if v is None else v for v in r] for r in rows]},
+        )
+        res.raise_for_status()
 
 
 def _rows(sheet: dict) -> list[list[Any]]:
