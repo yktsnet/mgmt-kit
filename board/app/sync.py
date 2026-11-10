@@ -4,20 +4,15 @@ import logging
 import sqlite3
 from dataclasses import dataclass, field
 
-from .definition import parse_definition, store_definition
-from .people import parse_people, store_people
 from .review import parse_review, store_review
-from .parse import SheetError, parse_candidate, parse_requisitions
+from .parse import SheetError, parse_candidate
 from .sources import FileRef, Source
 
 logger = logging.getLogger(__name__)
 
-REQUISITIONS = "settings/requisitions"
 CANDIDATES = "candidates/"
-DEFINITION = "settings/definition"
-PEOPLE = "settings/people"
 REVIEWS = "reviews/"
-KINDS = ("candidate", "requisitions", "definition", "people", "review")
+KINDS = ("candidate", "review")
 
 
 @dataclass
@@ -28,12 +23,6 @@ class SyncResult:
 
 
 def kind_of(ref: FileRef) -> str | None:
-    if ref.path == REQUISITIONS:
-        return "requisitions"
-    if ref.path == DEFINITION:
-        return "definition"
-    if ref.path == PEOPLE:
-        return "people"
     # reviews/<期>/<名前>
     if ref.path.startswith(REVIEWS) and ref.path.count("/") == 2:
         return "review"
@@ -96,9 +85,6 @@ def _upsert_file(db: sqlite3.Connection, ref: FileRef, kind: str | None, error: 
 
 def _clear(db: sqlite3.Connection, file_id: str) -> None:
     db.execute("DELETE FROM candidates WHERE file_id = ?", (file_id,))
-    db.execute("DELETE FROM requisitions WHERE file_id = ?", (file_id,))
-    db.execute("DELETE FROM definition_items WHERE file_id = ?", (file_id,))
-    db.execute("DELETE FROM people WHERE file_id = ?", (file_id,))
     db.execute("DELETE FROM reviews WHERE file_id = ?", (file_id,))
 
 
@@ -131,20 +117,7 @@ def _store(db: sqlite3.Connection, ref: FileRef, kind: str | None, book) -> None
         )
     elif kind == "review":
         store_review(db, ref.id, parse_review(book))
-    elif kind == "people":
-        store_people(db, ref.id, parse_people(book))
-    elif kind == "definition":
-        store_definition(db, ref.id, parse_definition(book))
-    elif kind == "requisitions":
-        for r in parse_requisitions(book):
-            db.execute(
-                "INSERT INTO requisitions (name, file_id, count, persona) VALUES (?, ?, ?, ?)",
-                (r.name, ref.id, r.count, r.persona),
-            )
-            db.executemany(
-                "INSERT INTO requisition_targets (name, axis, value) VALUES (?, ?, ?)",
-                [(r.name, a, v) for a, v in r.target.items()],
-            )
+
 
 
 def _drop_orphan_scores(db: sqlite3.Connection) -> None:

@@ -45,7 +45,6 @@ def test_samples_load(drive, db):
     result = sync(XlsxFolderSource(drive), db)
     assert result.errors == {}
     assert db.execute("SELECT count(*) FROM candidates").fetchone()[0] == 6
-    assert {r["name"] for r in db.execute("SELECT name FROM requisitions")} == {"リード", "開発"}
     row = db.execute("SELECT * FROM candidates WHERE email = 'liam-price@example.com'").fetchone()
     assert (row["stage"], row["applied"], row["requisition"]) == ("最終面接", "2026-03-02", "リード")
 
@@ -129,17 +128,11 @@ def test_duplicate_email_keeps_newer_file(drive, db):
 
 
 def test_files_outside_layout_are_ignored(drive, db):
-    shutil.copy(drive / "settings" / "requisitions.xlsx", drive / "memo.xlsx")
+    shutil.copy(drive / "candidates" / "noah-reed.xlsx", drive / "memo.xlsx")
     (drive / "candidates" / "~$noah-reed.xlsx").write_bytes(b"lock")
     result = sync(XlsxFolderSource(drive), db)
     assert "memo" not in result.read
     assert result.errors == {}
-
-
-def test_requisition_targets(drive, db):
-    sync(XlsxFolderSource(drive), db)
-    lead = dict(db.execute("SELECT axis, value FROM requisition_targets WHERE name = 'リード'").fetchall())
-    assert lead == {"A": 4, "B": 4, "D": 3}
 
 
 def test_duplicate_requisition_is_an_error():
@@ -186,4 +179,4 @@ def test_to_date(v, want):
 def test_xlsx_ref_has_no_extension(drive):
     refs = XlsxFolderSource(drive).list()
     assert FileRef in {type(r) for r in refs}
-    assert "settings/requisitions" in {r.path for r in refs}
+    assert "candidates/noah-reed" in {r.path for r in refs}

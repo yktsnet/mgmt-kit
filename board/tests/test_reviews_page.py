@@ -16,6 +16,7 @@ def client(tmp_path, monkeypatch):
     shutil.copytree(BOARD / "samples" / "drive", drive)
     monkeypatch.setenv("BOARD_XLSX_DIR", str(drive))
     monkeypatch.setenv("BOARD_SYNC_INTERVAL", "0")
+    monkeypatch.setenv("BOARD_DB", ":memory:")
     return TestClient(create_app(config.load()))
 
 

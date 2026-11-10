@@ -24,6 +24,9 @@ class Config:
     usage_dir: Path
     email_domain: str
     db_path: str
+    # 設定が空のときに、デモの在籍者と採用枠を入れる
+    demo: bool
+    ladder_md: Path
     # この秒数より前に読んでいれば、画面を開いたときに読み直す
     sync_interval: float
 
@@ -41,6 +44,9 @@ def load() -> Config:
         personas=_path("BOARD_PERSONAS", REPO / "ladder" / "docs" / "personas.md"),
         usage_dir=_path("BOARD_USAGE_DIR", REPO / "usage" / "tools" / "usage" / "claude-code"),
         email_domain=os.environ.get("BOARD_EMAIL_DOMAIN", "example.com"),
-        db_path=os.environ.get("BOARD_DB", ":memory:"),
+        # 設定はアプリが持つので、DB はファイルに置いて残す
+        db_path=os.environ.get("BOARD_DB", str(BOARD / "data" / "board.db")),
+        demo=os.environ.get("BOARD_DEMO", "1" if source == "xlsx" else "0") == "1",
+        ladder_md=_path("BOARD_LADDER_MD", REPO / "ladder" / "docs" / "ladder.md"),
         sync_interval=float(os.environ.get("BOARD_SYNC_INTERVAL", "3" if source == "xlsx" else "60")),
     )
