@@ -64,3 +64,15 @@ def test_memo_is_appended_and_empty_is_refused(db):
         add_memo(db, emma, GRACE, P, "  ")
     (r,) = records(db, GRACE, P)
     assert (r["kind"], r["body"], r["by_name"]) == ("memo", "次は D を見る", "🐘 Emma Hughes")
+
+
+def test_state_change_and_memo_are_recorded_with_time(db):
+    import datetime as dt
+
+    emma = me(db, "emma-hughes")
+    act(db, emma, GRACE, P, "submit", ready=True)
+    add_memo(db, emma, GRACE, P, "メモ")
+    rs = records(db, GRACE, P)
+    assert {r["kind"] for r in rs} == {"state", "memo"}
+    for r in rs:
+        assert dt.datetime.fromisoformat(r["at"])

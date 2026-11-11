@@ -145,3 +145,18 @@ def test_member_sees_own_skill_usage_on_approved_review(client):
     count, span = readme_skills("emma-hughes")
     shown = re.findall(r'<span class="ev usage"><b>usage</b> スキル ([^（]+)（([^）]+)）', html)
     assert shown == [(count, span)] * 4
+
+
+def test_review_page_shows_sheet_modified_time_and_editor(client):
+    db = client.app.state.board.db
+    file_id = db.execute("SELECT id FROM files WHERE path LIKE 'reviews/2026-H2/ben-carter%'").fetchone()[0]
+    db.execute("UPDATE files SET modified_by = 'Sheet Editor' WHERE id = ?", (file_id,))
+    modified = db.execute("SELECT modified FROM files WHERE id = ?", (file_id,)).fetchone()[0]
+    from app.main import _when
+
+    html = client.get("/reviews/2026-H2/ben-carter@example.com").text
+    assert f"Sheet updated {_when(modified)} by Sheet Editor" in html
+
+
+def test_review_page_shows_ladder_version(client):
+    assert "Ladder v1" in client.get("/reviews/2026-H2/ben-carter@example.com").text

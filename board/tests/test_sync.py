@@ -242,3 +242,31 @@ def test_old_candidate_tables_are_rebuilt_and_read_again(drive, tmp_path):
     assert "hiring" in {r[1] for r in db.execute("PRAGMA table_info(people)")}
     # 更新日時は変わっていないが、行の無い候補者のファイルとして読み直す
     assert "candidates/noah-reed" in sync(src, db).read
+
+
+def sync_client(drive, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from app import config
+    from app.main import create_app
+
+    monkeypatch.setenv("BOARD_XLSX_DIR", str(drive))
+    monkeypatch.setenv("BOARD_SYNC_INTERVAL", "0")
+    monkeypatch.setenv("BOARD_DB", ":memory:")
+    c = TestClient(create_app(config.load()))
+    c.post("/auth/demo", data={"email": "alice-walker@example.com"})
+    return c
+
+
+def test_bad_file_is_shown_as_section_on_screen(drive, monkeypatch):
+    edit(drive / "candidates" / "noah-reed.xlsx", "面接1", "E2", "たぶん")
+    html = sync_client(drive, monkeypatch).get("/hiring").text
+    section = html.split('<section class="frame errors">', 1)[1].split("</section>", 1)[0]
+    assert "読めなかったファイルが 1 件ある" in section and "<code>candidates/noah-reed</code>" in section
+
+
+def test_screen_shows_source_and_load_time(drive, monkeypatch):
+    import re
+
+    html = sync_client(drive, monkeypatch).get("/now").text
+    assert re.search(r'<span class="meta">手元のフォルダから \d\d:\d\d:\d\d に読み込み</span>', html)

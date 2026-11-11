@@ -111,3 +111,35 @@ def test_managers_env_makes_manager_and_never_demotes(tmp_path, monkeypatch):
     assert c.post("/api/people", json={"email": "member@example.com", "role": "manager"}).status_code == 200
     google_login(c, monkeypatch, "member@example.com")
     assert c.get("/settings").status_code == 200
+
+
+def test_verify_google_rejects_other_workspace_domain(monkeypatch):
+    from google.oauth2 import id_token
+
+    claims = {"hd": "other.example", "email_verified": True, "email": "a@example.com"}
+    monkeypatch.setattr(id_token, "verify_oauth2_token", lambda *a, **k: claims)
+    assert auth.verify_google("t", "cid", "example.com") is None
+
+
+def test_session_cookie_is_secure_outside_demo(tmp_path, monkeypatch):
+    c = make(tmp_path, monkeypatch, BOARD_GOOGLE_CLIENT_ID="cid", BOARD_DEMO="0")
+    c.base_url = "https://testserver"
+    r = google_login(c, monkeypatch, "alice-walker@example.com")
+    cookie = r.headers["set-cookie"]
+    assert cookie.startswith(f"{auth.COOKIE}=") and "secure" in cookie.lower()
+
+
+def test_empty_session_key_is_regenerated_on_each_start(monkeypatch):
+    monkeypatch.setenv("BOARD_SESSION_KEY", "")
+    assert config.load().session_key != config.load().session_key
+
+
+def test_drive_source_has_no_demo_login_or_demo_people(tmp_path, monkeypatch):
+    from app import main
+    from app.sources.xlsx_folder import XlsxFolderSource
+
+    monkeypatch.delenv("BOARD_DEMO", raising=False)
+    monkeypatch.setattr(main, "make_source", lambda cfg: XlsxFolderSource(tmp_path / "empty"))
+    c = make(tmp_path, monkeypatch, BOARD_SOURCE="drive")
+    assert c.post("/auth/demo", data={"email": "alice-walker@example.com"}).status_code == 404
+    assert c.app.state.board.db.execute("SELECT count(*) FROM people").fetchone()[0] == 0
