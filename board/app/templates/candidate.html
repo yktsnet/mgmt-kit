@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ candidate.name }} — 採用 — board{% endblock %}
+{% block title %}{{ candidate.name }} — 採用 — Board{% endblock %}
 {% block head %}<h1><a href="/hiring" class="back">採用</a> / {{ candidate.name }}</h1>
 <span class="note">{{ candidate.requisition or '応募枠なし' }} · Ladder v{{ candidate.version }}{% if candidate.source %} · {{ candidate.source }}{% endif %}{% if candidate.applied %} · {{ candidate.applied }} に応募{% endif %}</span>{% endblock %}
 {% block main %}

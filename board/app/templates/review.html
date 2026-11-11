@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_level.html" import axis, status %}
-{% block title %}{{ person.name }} — 評価 — board{% endblock %}
+{% block title %}{{ person.name }} — 評価 — Board{% endblock %}
 {% block head %}<h1><a href="/reviews?period={{ period }}" class="back">評価</a> / {{ person.name }}</h1>
 <span class="note">{{ period }}{% if review %} · Ladder v{{ review.version }}{% endif %} · Reviewer {{ person.evaluator_name or 'Unassigned' }}</span>{% endblock %}
 {% block main %}

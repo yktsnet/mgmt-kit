@@ -21,7 +21,7 @@ from .usage import sync_usage
 
 logger = logging.getLogger(__name__)
 HERE = Path(__file__).resolve().parent
-AXIS_NAMES = {"A": "上流・提案と関係者調整", "B": "標準化されたワークフローの運用", "C": "ドメイン理解", "D": "検証・品質保証", "E": "インフラ・基盤"}
+AXIS_NAMES = {"A": "上流・提案と関係者調整", "B": "AI開発のワークフロー運用", "C": "ドメイン理解", "D": "検証・品質保証", "E": "インフラ・基盤"}
 
 
 def make_source(cfg: config.Config):
