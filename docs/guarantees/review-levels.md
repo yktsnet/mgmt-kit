@@ -1,5 +1,7 @@
 # review-levels
 
+## 軸の段階と本人の段階
+
 | 保証 | 対応テスト |
 |---|---|
 | 軸の細目が L2〜L5 ですべて ○ なら、軸は L5 になる | `test_all_pass_reaches_l5` |
@@ -9,6 +11,11 @@
 | L3 以上に未観測があれば、軸はその1つ下の段階で止まる | `test_unobserved_above_l2_stops_there` |
 | 本人の段階は A と B の低いほうになる | `test_person_level_is_lower_of_a_and_b` |
 | A か B のどちらかが決まらなければ、本人の段階は決まらない | `test_person_level_is_lower_of_a_and_b` |
+
+## 評価のシートの読み方
+
+| 保証 | 対応テスト |
+|---|---|
 | 評価のシートのテンプレートは L2〜L5 の細目だけを並べる | `test_template_skips_l1` |
 | 判定の `o` は ○ として読む | `test_parse_review_accepts_typed_variants` |
 | シートのメールは小文字にそろえて読む | `test_parse_review_accepts_typed_variants` |
