@@ -46,7 +46,7 @@ docker compose up
 
 Open http://localhost:8000. With no configuration, it starts in demo mode on the ten fictional members and candidates in `board/samples/`; pick a member on the login screen. Settings, review states and records live in a volume, so they survive `docker compose down` and `up`.
 
-To sign in with real Google accounts and read sheets from Drive, follow [board/docs/setup.md](board/docs/setup.md).
+To sign in with real Google accounts and read sheets from Drive, configure board with environment variables. They come in three groups: sign-in (`BOARD_GOOGLE_CLIENT_ID`, `BOARD_ALLOWED_DOMAIN`, `BOARD_MANAGERS`, `BOARD_SESSION_KEY`), reading the sheets (`BOARD_SOURCE`, `BOARD_DRIVE_FOLDER_ID`, `BOARD_SERVICE_ACCOUNT_KEY`, `BOARD_SYNC_INTERVAL`) and usage data (`BOARD_USAGE_DIR`). What each value means, and the setup steps, are in [board/docs/setup.md](board/docs/setup.md).
 
 ## How it works
 

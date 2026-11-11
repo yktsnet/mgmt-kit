@@ -44,7 +44,7 @@ docker compose up
 
 http://localhost:8000 を開く。何も設定しなければ、`board/samples/` の架空の10人と候補者を読むデモで起動し、ログインの画面で在籍者を選んで入る。設定・評価の状態・記録は volume に置くので、`docker compose down` と `up` のあとも残る。
 
-本物の Google のアカウントでログインし、Drive のシートを読むまでの手順は [board/docs/setup.md](board/docs/setup.md) にある。
+本物の Google のアカウントでログインし、Drive のシートを読むときは、環境変数で設定する。ログイン（`BOARD_GOOGLE_CLIENT_ID`・`BOARD_ALLOWED_DOMAIN`・`BOARD_MANAGERS`・`BOARD_SESSION_KEY`）、シートの読み込み（`BOARD_SOURCE`・`BOARD_DRIVE_FOLDER_ID`・`BOARD_SERVICE_ACCOUNT_KEY`・`BOARD_SYNC_INTERVAL`）、利用データ（`BOARD_USAGE_DIR`）の3つに分かれる。値の意味と手順は [board/docs/setup.md](board/docs/setup.md) にある。
 
 ## How it works
 

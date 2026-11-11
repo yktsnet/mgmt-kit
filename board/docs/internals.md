@@ -1,6 +1,6 @@
 # board の作り
 
-board を直す担当が、どこに何があり、何を守るかを知るための文書。何を決めていてなぜかは [decisions.md](decisions.md)、
+board を直す担当が、どこに何があり、何を守るかを知るための文書。何をどう決め、なぜそう決めたかは [decisions.md](decisions.md)、
 使い方と起動の仕方は [トップの README](../../README.md) にある。
 
 ## データの流れ
