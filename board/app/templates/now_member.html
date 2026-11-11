@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ person.name }} — 現在地 — board{% endblock %}
+{% block title %}{{ person.name }} — 現在地 — Board{% endblock %}
 {% block head %}<h1><a href="/now" class="back">現在地</a> / {{ person.name }}</h1>{% if usage %}<span class="note">{{ usage.since }} 〜 {{ usage.until }} の平日</span>{% endif %}{% endblock %}
 {% block main %}
 {% if row %}{% set nx = row.chosen or row.suggested %}

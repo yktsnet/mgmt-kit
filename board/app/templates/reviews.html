@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_level.html" import axis, status %}
-{% block title %}評価 — board{% endblock %}
+{% block title %}評価 — Board{% endblock %}
 {% block head %}<h1>評価</h1><span class="note">Reviewer ごとの進み具合と、一人ずつの段階。判定は Drive の <code>reviews/{{ period or '<期>' }}/</code> のシートに書く</span>{% endblock %}
 {% block main %}
 {% if periods|length > 1 %}
