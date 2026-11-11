@@ -1,3 +1,65 @@
+## PR記録: feat: Even out board screens at three widths and show skill counts on B evidence
+issue: 02 (02_screens-at-three-widths.md)
+PR: https://github.com/yktsnet/mgmt-kit/pull/49
+
+## 変更内容
+- `board.css` の共通の部品を3つの幅で揃えた。本文の幅の上限を `--page` に置き、2200px 以上では 1920px・16px にする。評価の一覧の表は区画の幅に広げ、列の割合を揃えた
+- 現在地の図の SVG が持つ `.muted` の 11px が同じ文書の表の `td.muted` に当たり、理由の列が小さくなっていたのを打ち消した。図の小さい文字は 12px で描き、幅の上限を 1200px にした
+- 760px 以下では、表を区画の中で横に送り行の高さを揃え、図は縮めずに区画の中で横に送り、2つの図を縦に並べる。Items は段階ごとに軸を縦に積む（`data-axis` で軸の名前を出す）。デモのログインは1人を1枚に積む
+- 採用の一覧は、狭い画面で「面接・届いていない・次に聞く」を畳み、名前・選考の段階・軸の段階を残す（Crit で案Aに決めた）
+- 評価の1人のページで、Evidence に「スキル」と「回数」を含む B の細目（初版では L2 と L4）の根拠の欄に、usage のスキルの回数と期間を出す。期間と数え方は現在地の「使い方」の表と同じ（`usage_report.skills`）
+
+## 保証
+- 画面：評価・現在地・採用・デモのログインは 1440・2560・390px で横スクロールが出ない → `tests/test_app.py::test_no_horizontal_scroll`（Playwright と chromium のある環境で動き、無ければ飛ばす）。ほかに `test_wide_screen_stops_at_max_width_with_even_margins`・`test_narrow_now_stacks_charts_with_readable_text`・`test_narrow_hiring_keeps_name_stage_and_axes_visible`・`test_narrow_items_wrap_within_screen`
+- 評価：B の細目に限り usage のスキルの回数と期間が出る → `tests/test_reviews_page.py::test_skill_usage_only_on_b_items_counting_skills`・`test_no_skill_usage_without_usage_row`・`test_member_sees_own_skill_usage_on_approved_review`
+- 画面の中身 → `test_reviews_roster_rows`・`test_now_sections_for_manager`・`test_now_for_member_without_reviewees`・`test_hiring_page_lists_candidates_per_requisition`・`test_demo_login_lists_people_with_roles_and_tabs`
+- 維持：見せる範囲・平均の出し方・段階の決め方は変えていない（既存のテストがすべて通る）
+
+## 静的確認結果
+- Playwright のある環境で `python -m pytest -q` が 193 passed。無い環境で 163 passed, 30 skipped
+- git diff --name-only --cached:
+  board/app/main.py
+  board/app/static/board.css
+  board/app/templates/candidate.html
+  board/app/templates/hiring.html
+  board/app/templates/review.html
+  board/app/usage_report.py
+  board/app/views.py
+  board/tests/test_app.py
+  board/tests/test_hiring.py
+  board/tests/test_now.py
+  board/tests/test_reviews_page.py
+
+
+## 起票時の合意から外れたこと（user 承認済み）
+- B の根拠のスキルの回数の期間は、Issue の「usage の最後の日から14日」ではなく、現在地の「使い方」の表と同じ期間にした。そのため `対象` に無い `board/app/main.py` と `board/app/usage_report.py` を変えた
+- 3つの幅のテスト（30件）は Playwright と chromium が要り、CI では飛ぶ。CI に入れるのは見送った
+
+## 確認者の判定
+| # | 項目 | 判定 |
+|---|---|---|
+| 1 | 評価の一覧と1人のページに横スクロールが出ない | 合 |
+| 2 | 現在地（Manager・担当の無い Member）と1人の推移に横スクロールが出ない | 合 |
+| 3 | 採用の一覧と候補者のページに横スクロールが出ない | 合 |
+| 4 | デモのログインに横スクロールが出ない | 合 |
+| 5 | 2560px で本文が上限で止まり、余白が均等 | 合 |
+| 6 | 390px で現在地の図が縦に並び、文字が12px 以上 | 合 |
+| 7 | 390px で採用の一覧の名前・段階・軸が切れない | 合 |
+| 8 | 390px で Items の文と根拠が折り返す | 合 |
+| 9 | B の L2・L4 だけにスキルの回数と期間が出る | 合 |
+| 10 | usage に行が無いときは出さない | 合 |
+| 11 | Member が自分の Approved の評価で自分の数字だけを見る | 合 |
+| 12 | 画面の中身を確かめるテストがある | 合 |
+| 13 | `python -m pytest -q` が通る | 合 |
+
+## 手戻り
+| 何が起きたか | 失ったもの | 原因の分類 | 仕組みで防げたか |
+|---|---|---|---|
+| Issue の B の根拠の期間（14日）が、現在地の実際の期間と食い違っていた。user に聞き直した | 1回。5分 | Issue の切り方 | 防げた：起票時に現在地の期間を `usage_report.team` の出力で確かめていれば |
+| 現在地の Member の行のテストで、Approved 前の自分の段階が見える前提の期待値を書いて落ちた | 1回。2分 | 実装者の不注意 | 防げない |
+
+---
+
 ## board の画面を3つの幅で見直して作りを揃え、評価の B の根拠にスキルの回数を添える
 id: 02
 branch-slug: screens-at-three-widths
