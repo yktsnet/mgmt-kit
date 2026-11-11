@@ -7,9 +7,9 @@
 | 中身 | 正本 |
 |---|---|
 | 考え方（軸・段階の決め方・採点の原則） | ladder.md |
-| 判定文 | board で回すときは board の設定。運用しながら直していくもので、ladder.md は初版の出どころになる。board を使わないときは ladder.md |
+| 判定文と判定に読むもの（Evidence） | board で回すときは board の設定。運用しながら直していくもので、ladder.md は初版の出どころになる。board を使わないときは ladder.md |
 
-スライドの判定文は ladder.md のもので、board の設定で直した判定文とは一致しないことがある。
+スライドの判定文は ladder.md のもので、board の設定で直したものとは一致しないことがある。
 
 スライドの元は [slides.html](slides.html) で、PNG は `scripts/render-slides.sh ladder` で作り直す。
 
