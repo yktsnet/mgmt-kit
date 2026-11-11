@@ -39,7 +39,7 @@ usage は GitHub で Issue と PR を中心に仕事を進め、Claude Code を�
 
 | | 中身 |
 |---|---|
-| [ladder/docs/ladder.md](ladder/docs/ladder.md) | 5軸5段階と各セルの判定文、判定の材料にするもの。board では定義の正本はアプリの設定で、`ladder.md` は初版の出どころ |
+| [ladder/docs/ladder.md](ladder/docs/ladder.md) | 5軸5段階と各セルの判定文、判定の材料にするもの。軸・段階の決め方・採点の原則の正本。判定文と判定に読むものは、board で回すときは board の設定が正本で、`ladder.md` は初版の出どころ |
 | [ladder/docs/personas.md](ladder/docs/personas.md) | 各段階の参照ペルソナ。軸の凸凹を持たせた5人 |
 | [ladder/docs/scoring.md](ladder/docs/scoring.md) | 在籍者を採点し、次に上げる軸を決めるまでの手順 |
 | [ladder/docs/hiring.md](ladder/docs/hiring.md) | 同じ軸を候補者に当てる手順。評価の材料の替え方 |
