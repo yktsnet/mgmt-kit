@@ -22,22 +22,13 @@ Documents linked from this page are in Japanese unless noted.
 
 Hiring, growth and reviews are often decided by people who are not engineers, such as executives and HR. But engineers' work shows up in repository output and in how they use AI, which those people find hard to read. Decide without being able to read it, and the criteria vary with whoever is looking, and hiring, growth and reviews each run on their own scale. People end up reconciling the gaps between them forever.
 
-So mgmt-kit connects executives and HR with engineers' work.
+mgmt-kit lets executives and HR decide hiring, growth and reviews on one set of criteria, ladder, without changing how they work. Verdicts and interview notes only need to be written in spreadsheets, and the engineers set up and run Board, which turns them into levels.
 
-- **Leave how executives and HR work alone.** Verdicts and interview notes only need to be written in the spreadsheets people already use. Board reads them and turns them into levels, and setting up and running Board is the engineers' job
-- **Make the work readable on one set of criteria.** Distribute workflows (standardized development procedures) so output takes the same shape, and judge hiring, growth and reviews on ladder, a five-axis, five-level set of criteria
+ladder is a table that splits what is measured into five axes and how much a person can be left to handle alone into five levels, L1 to L5. Each cell's verdict text says what to open in the repository to check whether it holds.
 
-One set of criteria only works when these five are connected.
+If the places to open differ across the team, the verdict texts cannot be checked. So the team is given a workflow, a set of procedures for developing with AI agents, which aligns the shape and location of output. [sdlc-kit](https://github.com/yktsnet/sdlc-kit) distributes it. The workflow is built after the axes are decided: standardize without deciding what to measure, and only the file format gets aligned; the substance a review needs never shows up in the output.
 
-- **Decide the axes.** Once you know what to measure, you know what standardization has to align
-- **Distribute the workflows.** When a team runs standardized procedures, its output takes the same shape
-- **Make the output visible.** Output of the same shape can be read for differences in substance, not format
-- **Evaluate.** Only once there is something to read can you judge what level a person is at
-- **Measure members and candidates on one scale.** The axes are shared; only the evidence changes
-
-Build only the axes and there is nothing to measure. Build only the standardization and nobody can tell whether it is working. Hire on a separate standard and the scale no longer fits once you start growing the people you hired.
-
-The axes come before the workflows. Standardize without deciding what to measure, and only the file format gets aligned; the substance a review needs never shows up in the output. Distributing the workflows is the job of [sdlc-kit](https://github.com/yktsnet/sdlc-kit).
+The axes are shared by members and candidates; only the evidence changes. Hire on a separate standard and the scale no longer fits once you start growing the people you hired.
 
 ## Quick Start
 
@@ -69,13 +60,12 @@ flowchart TD
 
 Thick lines are people's actions; dotted lines are what usage and Board collect and read automatically.
 
-
 Running the workflows leaves the work in output and in usage data, and each is evidence for a different judgment.
 
 - **Output sets the level.** The workflows align the shape and location of output, and each ladder verdict text is written so it says what to open in the repository to check whether it holds. Reviewers open the place a verdict points to, judge it, and write the verdict with its evidence in the sheet. Candidates have no output, so interviewers apply the same verdict texts to what they hear in interviews
 - **Usage data shows whether people develop the way the workflows prescribe.** usage collects, per member and every day, how Claude Code is used (tokens, skills, subagents) and the amount of work on GitHub (commits, PRs, issues, lines), so you can compare whether work matching the amount used comes out as issues and PRs. What to look at and how to tell what is missing is in [the target state](usage/tools/usage/claude-code/README.md#あるべき姿)
 
-Executives and HR only touch the sheets and Board's screens. Verdicts are written in the sheets, so reviewers and interviewers do not need to be engineers either. People decide whether to hire and which axis to raise next; Board lays out what they need to decide. Sheets are only read as a copy; the definition, members and roles, openings, and the states of reviews and hiring live only in Board.
+Executives and HR only touch the sheets and Board's screens. Verdicts are written in the sheets, so reviewers and interviewers do not need to be engineers either. People decide whether to hire and which axis to raise next; Board lays out what they need to decide.
 
 ### Inputs
 
