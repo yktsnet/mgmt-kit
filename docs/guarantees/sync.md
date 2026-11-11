@@ -10,7 +10,7 @@
 | 同じメールの新しいほうのファイルを消すと、古いほうを読む | `test_duplicate_email_keeps_newer_file` |
 | 置き場の決まりの外のファイルとロックファイルは読まずにエラーにもしない | `test_files_outside_layout_are_ignored` |
 
-## 読めないファイル
+## 読み込みの結果
 
 | 保証 | 対応テスト |
 |---|---|
@@ -18,6 +18,8 @@
 | 読めないファイルがあっても、ほかのファイルは読む | `test_bad_file_is_reported_and_others_still_load` |
 | 直したファイルは読み直す | `test_fixed_file_is_read_again` |
 | 直したファイルのエラーは消す | `test_fixed_file_is_read_again` |
+| 読めなかったファイルを、画面に区画として出す | `test_bad_file_is_shown_as_section_on_screen` |
+| 画面の右上に、どこからいつ読み込んだかを出す | `test_screen_shows_source_and_load_time` |
 
 ## シートの中身の読み方
 

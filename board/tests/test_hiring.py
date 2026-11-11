@@ -116,3 +116,50 @@ def test_hiring_page_lists_candidates_per_requisition(tmp_path, monkeypatch):
     # 狭い画面で畳む列は、面接・届いていない・次に聞くの3つだけ
     head = html.split("<h2>リード</h2>", 1)[1].split("</thead>", 1)[0]
     assert re.findall(r'<th class="[^"]*wide-only[^"]*">(.*?)</th>', head) == ["面接", "届いていない", "次に聞く"]
+
+
+def test_stage_record_has_time(db):
+    import datetime as dt
+
+    set_stage(db, me(db), "ethan-shaw@example.com", "書類選考")
+    r = records(db, "ethan-shaw@example.com")[0]
+    assert r["kind"] == "stage" and dt.datetime.fromisoformat(r["at"])
+
+
+def test_unobserved_axis_is_listed_to_ask(db):
+    dev = next(o for o in openings(db) if o.requisition and o.requisition["name"] == "開発")
+    sophie = next(r for r in dev.rows if r.email == "sophie-lane@example.com")
+    assert "C" in sophie.ask
+
+
+def hiring_client(tmp_path, monkeypatch):
+    drive = tmp_path / "drive"
+    shutil.copytree(BOARD / "samples" / "drive", drive)
+    monkeypatch.setenv("BOARD_XLSX_DIR", str(drive))
+    monkeypatch.setenv("BOARD_SYNC_INTERVAL", "0")
+    monkeypatch.setenv("BOARD_DB", ":memory:")
+    c = TestClient(create_app(config.load()))
+    c.post("/auth/demo", data={"email": "alice-walker@example.com"})
+    return c
+
+
+def test_hiring_pages_show_no_usage(tmp_path, monkeypatch):
+    c = hiring_client(tmp_path, monkeypatch)
+    for path in ("/hiring", "/hiring/liam-price@example.com"):
+        html = c.get(path).text
+        assert "トークン" not in html and 'class="avg"' not in html and "ev usage" not in html
+
+
+def test_candidate_page_shows_interviews_verdicts_and_records(tmp_path, monkeypatch):
+    c = hiring_client(tmp_path, monkeypatch)
+    assert c.post("/api/hiring/liam-price@example.com/memo", json={"body": "候補者のメモ"}).status_code == 200
+    html = c.get("/hiring/liam-price@example.com").text
+    interviews = html.split("<h2>Interviews</h2>", 1)[1].split("</section>", 1)[0]
+    assert len(re.findall(r"<tr>", interviews.split("<tbody>", 1)[1])) == 2
+    assert "item verdict pass" in html
+    assert "候補者のメモ" in html.split('id="record"', 1)[1]
+
+
+def test_unknown_candidate_page_is_404(tmp_path, monkeypatch):
+    c = hiring_client(tmp_path, monkeypatch)
+    assert c.get("/hiring/nobody@example.com").status_code == 404

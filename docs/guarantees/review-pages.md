@@ -16,6 +16,8 @@
 | 保証 | 対応テスト |
 |---|---|
 | 評価の1人のページは Reviewer・本人の段階・細目ごとの判定と根拠を出す | `test_review_detail_shows_levels_and_verdicts` |
+| 評価の1人のページは、シートを最後に編集した日時と人を出す | `test_review_page_shows_sheet_modified_time_and_editor` |
+| 評価の1人のページは、評価がどの版で付いたかを出す | `test_review_page_shows_ladder_version` |
 | シートがまだ無い人の評価のページは「評価のシートがまだ無い」と出す | `test_not_started_has_no_sheet` |
 | 在籍者でない人の評価のページは 404 になる | `test_not_started_has_no_sheet` |
 

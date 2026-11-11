@@ -193,3 +193,19 @@ def test_now_for_member_without_reviewees(tmp_path, monkeypatch):
     _, rows = html_table(page, "量と成果")
     assert list(rows) == ["henry-ward", "平均"]
     assert rows["henry-ward"] == md_table("量と成果")[1]["henry-ward"]
+
+
+def test_no_average_on_screen_with_two_people(tmp_path, monkeypatch):
+    import json
+
+    # render.py は親のディレクトリの chart.py を読むので、親ごと写す
+    shutil.copytree(USAGE_README.parent.parent, tmp_path / "usage", ignore=shutil.ignore_patterns("__pycache__"))
+    usage = tmp_path / "usage" / "claude-code"
+    for p in (usage / "data").glob("*.json"):
+        d = json.loads(p.read_text(encoding="utf-8"))
+        d["members"] = {k: v for k, v in d["members"].items() if k in ("alice-walker@example.com", "ben-carter@example.com")}
+        p.write_text(json.dumps(d), encoding="utf-8")
+    monkeypatch.setenv("BOARD_USAGE_DIR", str(usage))
+    html = make(tmp_path, monkeypatch).get("/now").text
+    assert "日ごとのトークン量" in html
+    assert '<tr class="average">' not in html and 'class="avg"' not in html

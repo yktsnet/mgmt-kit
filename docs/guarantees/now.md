@@ -28,6 +28,7 @@
 | Member にも全員の平均を出す | `test_member_sees_average_of_everyone_but_only_own_lines` |
 | 平均の線は直前5日の移動平均にする | `test_average_is_smoothed_and_needs_three_people` |
 | 平均は3人以上のときだけ出す | `test_average_is_smoothed_and_needs_three_people` |
+| 在籍者が2人以下のとき、画面に平均を出さない | `test_no_average_on_screen_with_two_people` |
 
 ## 1人の現在地のページ
 
