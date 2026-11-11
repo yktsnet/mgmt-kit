@@ -1,0 +1,27 @@
+name: usage
+
+on:
+  pull_request:
+    paths: &paths
+      - "usage/tools/usage/**/*.py"
+      - "usage/tools/usage/claude-code/data/**"
+      - "usage/tools/usage/claude-code/github.json"
+      - "usage/tools/usage/claude-code/README.md"
+      - ".github/workflows/usage.yml"
+  push:
+    branches: [main]
+    paths: *paths
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # 作り直した MD と図がコミットされたものと一致しなければ、render.py かデータだけを直して作り直し忘れている
+      - run: python usage/tools/usage/claude-code/render.py
+      # 新しく増えたファイルも差分に出す
+      - run: git add --intent-to-add usage/tools/usage/claude-code
+      - run: git diff --exit-code usage/tools/usage/claude-code

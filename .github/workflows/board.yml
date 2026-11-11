@@ -1,0 +1,35 @@
+name: board
+
+on:
+  pull_request:
+    paths: &paths
+      - "board/**"
+      - "!board/**/*.md"
+      - "ladder/docs/ladder.md"
+      - "usage/tools/usage/**/*.py"
+      - "usage/tools/usage/claude-code/data/**"
+      # usage.py と usage_report.py が読み、テストは README.md の表とも突き合わせる
+      - "usage/tools/usage/claude-code/github.json"
+      - "usage/tools/usage/claude-code/README.md"
+      - ".github/workflows/board.yml"
+  push:
+    branches: [main]
+    paths: *paths
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: board
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            board/requirements.txt
+            board/requirements-dev.txt
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - run: python -m pytest -q
