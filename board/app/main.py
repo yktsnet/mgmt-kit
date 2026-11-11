@@ -258,7 +258,8 @@ def create_app(cfg: config.Config | None = None) -> FastAPI:
         if not show_records:
             d["records"] = []
         acts = workflow.allowed(board.db, me, email, period, d["row"].status == "ready") if d["review"] else []
-        return render(request, "review", period=period, actions=acts, show_records=show_records, **d)
+        return render(request, "review", period=period, actions=acts, show_records=show_records,
+                      skill_usage=usage_report.skills(board.cfg.usage_dir, email), counts_skills=views.counts_skills, **d)
 
     def forbidden():
         return JSONResponse({"error": "この操作をする権限が無い"}, 403)

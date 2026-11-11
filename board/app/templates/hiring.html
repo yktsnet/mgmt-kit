@@ -12,17 +12,17 @@
   <ol class="funnel">{% for s in stages %}<li class="{{ 'zero' if not o.counts[s] }}{{ ' closed' if s in ('不採用', '辞退') }}"><span class="n">{{ o.counts[s] }}</span><span class="s">{{ s }}</span></li>{% endfor %}</ol>
   <div class="scroll">
   <table class="roster hiring">
-    <thead><tr><th>Candidate</th><th>Stage</th><th class="num">面接</th>{% for a in AXES %}<th class="ax" title="{{ AXIS_NAMES[a] }}">{{ a }}</th>{% endfor %}<th>届いていない</th><th>次に聞く</th></tr></thead>
+    <thead><tr><th>Candidate</th><th>Stage</th><th class="num wide-only">面接</th>{% for a in AXES %}<th class="ax" title="{{ AXIS_NAMES[a] }}">{{ a }}</th>{% endfor %}<th class="wide-only">届いていない</th><th class="wide-only">次に聞く</th></tr></thead>
     <tbody>
-      {% if o.requisition %}<tr class="target"><td>求める高さ</td><td></td><td></td>{% for a in AXES %}<td class="ax">{% if a in o.target %}<span class="lv">L{{ o.target[a] }}</span>{% else %}<span class="lvx none" title="求めない">·</span>{% endif %}</td>{% endfor %}<td></td><td></td></tr>{% endif %}
+      {% if o.requisition %}<tr class="target"><td>求める高さ</td><td></td><td class="wide-only"></td>{% for a in AXES %}<td class="ax">{% if a in o.target %}<span class="lv">L{{ o.target[a] }}</span>{% else %}<span class="lvx none" title="求めない">·</span>{% endif %}</td>{% endfor %}<td class="wide-only"></td><td class="wide-only"></td></tr>{% endif %}
       {% for r in o.rows %}
       <tr class="{{ 'closed' if r.stage in ('不採用', '辞退') }}">
         <td class="nowrap"><a href="/hiring/{{ r.email }}">{{ r.name }}</a></td>
         <td><span class="stage">{{ r.stage }}</span></td>
-        <td class="num muted">{{ r.interviews or '' }}</td>
+        <td class="num muted wide-only">{{ r.interviews or '' }}</td>
         {% for a in AXES %}<td class="ax {{ 'short' if a in r.short }}">{{ axis(r.levels.get(a)) }}</td>{% endfor %}
-        <td class="nowrap">{% if r.short %}{{ r.short|join(' ') }}{% elif r.interviews %}<span class="muted">-</span>{% endif %}</td>
-        <td class="nowrap">{% if not r.interviews %}<span class="muted">面接前</span>{% elif r.ask %}{{ r.ask|join(' ') }}{% else %}<span class="muted">-</span>{% endif %}</td>
+        <td class="nowrap wide-only">{% if r.short %}{{ r.short|join(' ') }}{% elif r.interviews %}<span class="muted">-</span>{% endif %}</td>
+        <td class="nowrap wide-only">{% if not r.interviews %}<span class="muted">面接前</span>{% elif r.ask %}{{ r.ask|join(' ') }}{% else %}<span class="muted">-</span>{% endif %}</td>
       </tr>
       {% else %}
       <tr><td colspan="10" class="muted">まだ候補者がいない。</td></tr>

@@ -35,10 +35,10 @@
     <thead><tr><th class="lvcol"></th>{% for a in AXES %}<th>{{ a }}<span class="name">{{ AXIS_NAMES[a] }}</span></th>{% endfor %}</tr></thead>
     <tbody>{% for lv in (5, 4, 3, 2) %}
       <tr><td class="lvcol"><span class="lv">L{{ lv }}</span></td>
-      {% for a in AXES %}<td>
+      {% for a in AXES %}<td data-axis="{{ a }} {{ AXIS_NAMES[a] }}"{% if not cells.get((lv, a)) %} class="none"{% endif %}>
         {% for it, v in cells.get((lv, a), []) %}<div class="item verdict {{ {'○': 'pass', '×': 'fail', '未観測': 'unobs'}.get(v.verdict) if v else 'blank' }}">
           <span class="mark">{{ v.verdict if v else '' }}</span>
-          <span><span class="key">{{ it.key }}</span> {{ it.text }}{% if v and v.note %}<span class="ev"><b>根拠</b> {{ v.note }}</span>{% endif %}</span>
+          <span><span class="key">{{ it.key }}</span> {{ it.text }}{% if v and v.note %}<span class="ev"><b>根拠</b> {{ v.note }}</span>{% endif %}{% if skill_usage and counts_skills(it) %}<span class="ev usage"><b>usage</b> スキル {{ skill_usage.count }}（{{ skill_usage.since }} 〜 {{ skill_usage.until }}）</span>{% endif %}</span>
         </div>{% endfor %}
       </td>{% endfor %}</tr>
     {% endfor %}</tbody>

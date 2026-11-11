@@ -4,6 +4,8 @@
   --bg: #F3F5F9; --surface: #FFFFFF; --head: #EEF2F8; --line: #D5DAE5;
   --ink: #1A1A1A; --muted: #6B7280; --teal-soft: #E4F0F4; --crim-soft: #F7E7E7;
   --radius: 4px;
+  /* 本文の幅の上限。広い画面では止めて、左右の余白を均等にする */
+  --page: 1680px;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -12,6 +14,9 @@ body {
   font-variant-numeric: tabular-nums;
 }
 @media (min-width: 1800px) { body { font-size: 15px; } }
+@media (min-width: 2200px) { :root { --page: 1920px; } body { font-size: 16px; } }
+/* 文字の色だけを変える。現在地の図の SVG が持つ .muted の 11px が、同じ文書の表にも当たるのを打ち消す */
+td.muted, span.muted, p.muted { color: var(--muted); font-size: inherit; }
 a { color: var(--teal); text-decoration: none; }
 a:hover { text-decoration: underline; }
 code { font-family: "Noto Sans Mono CJK JP", ui-monospace, monospace; font-size: .9em; }
@@ -19,7 +24,7 @@ button, select, input, textarea { font: inherit; color: inherit; }
 
 /* 上の帯：名前、タブ、右端に設定 */
 .top { background: var(--navy); color: #fff; }
-.top .inner { max-width: 1680px; margin: 0 auto; padding: 0 24px; display: flex; align-items: stretch; gap: 4px; height: 48px; }
+.top .inner { max-width: var(--page); margin: 0 auto; padding: 0 24px; display: flex; align-items: stretch; gap: 4px; height: 48px; }
 .top .brand { color: #fff; font-weight: 700; letter-spacing: .04em; display: flex; align-items: center; margin-right: 24px; }
 .top .tab, .top .off {
   display: flex; align-items: center; padding: 0 14px; color: #fff; opacity: .8;
@@ -30,7 +35,7 @@ button, select, input, textarea { font: inherit; color: inherit; }
 .top .off { opacity: .35; cursor: default; }
 .top .spacer { flex: 1; }
 
-.wrap { max-width: 1680px; margin: 0 auto; padding: 20px 24px 64px; display: flex; flex-direction: column; gap: 16px; }
+.wrap { max-width: var(--page); margin: 0 auto; padding: 20px 24px 64px; display: flex; flex-direction: column; gap: 16px; }
 .pagehead { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .pagehead h1 { font-size: 18px; color: var(--navy); white-space: nowrap; }
 .pagehead .note { color: var(--muted); font-size: 13px; }
@@ -166,12 +171,10 @@ table.grid td { vertical-align: top; font-size: 13px; line-height: 1.55; border-
 .signin .error { color: var(--crim); background: var(--crim-soft); padding: 8px 12px; border-radius: var(--radius); }
 
 /* 評価の一覧。区画ごとに表を分けても列が揃うよう、列の幅を決め打ちにする */
-table.roster { table-layout: fixed; width: auto; }
-table.roster th:nth-child(1) { width: 220px; }
-table.roster th:nth-child(2) { width: 130px; }
-table.roster th:nth-child(3) { width: 90px; }
-table.roster th.ax { width: 64px; }
-table.roster th:last-child { width: 80px; }
+table.roster { table-layout: fixed; }
+table.roster th:nth-child(1) { width: 26%; }
+table.roster th:nth-child(2) { width: 14%; }
+table.roster th:nth-child(3) { width: 10%; }
 .top a.brand:hover { text-decoration: none; opacity: .85; }
 
 /* 1人の評価のページ */
@@ -226,9 +229,11 @@ table.report { width: 100%; min-width: 520px; }
 table.report th:first-child, table.report td:first-child { width: 200px; }
 table.report td.num, table.report th.num { width: 110px; }
 .pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
-@media (max-width: 1100px) { .pair { grid-template-columns: 1fr; } }
+@media (max-width: 1100px) { .pair { grid-template-columns: minmax(0, 1fr); } }
 .chart { padding: 12px 16px; overflow-x: auto; }
-.chart svg { display: block; width: 100%; min-width: 560px; height: auto; }
+.chart svg { display: block; width: 100%; min-width: 560px; max-width: 1200px; height: auto; margin: 0 auto; }
+/* 図は usage の MD と同じ SVG で、小さい文字は 11px で描かれる。縮めずに出す幅で 12px になるようにする */
+.chart svg .muted, .chart svg .limit-text { font-size: 12px; }
 table.report.wide td:first-child, table.report.wide th:first-child { width: 180px; }
 .frame > .foot { margin: 0; padding: 8px 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink); border-left: 3px solid var(--gold); }
 
@@ -265,3 +270,43 @@ tfoot tr.average td { border-top: 2px solid var(--line); background: var(--head)
 .badge { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 10px; border-radius: 10px; }
 .badge.manager { background: var(--gold); color: #fff; }
 .badge.hiring { background: var(--teal); color: #fff; }
+
+/* 狭い画面。表は区画の中で横に送り、行の高さを揃える。図は縮めずに区画の中で横に送る */
+@media (max-width: 760px) {
+  .pagehead h1 { white-space: normal; }
+  .frame > .head h2 { white-space: normal; }
+  .chart svg { width: auto; min-width: 0; max-width: none; }
+  table.report { min-width: 0; }
+  table.report th, table.report td { white-space: nowrap; }
+  table.report th:first-child, table.report td:first-child, table.report td.num, table.report th.num { width: auto; }
+  table.report td.note { white-space: normal; min-width: 200px; }
+  table.roster { table-layout: auto; }
+  table.roster th, table.roster td { width: auto !important; }
+  th.ax, td.ax { width: auto; padding-left: 4px; padding-right: 4px; }
+  th, td { padding: 8px 8px; }
+
+  /* Items は軸を列にした表をやめ、段階ごとに軸を縦に積む。細目の文と根拠は画面の幅で折り返す */
+  table.grid, table.grid tbody, table.grid tr, table.grid td { display: block; width: 100%; min-width: 0; }
+  table.grid thead { display: none; }
+  table.grid tr { border-top: 1px solid var(--line); }
+  table.grid tr:first-child { border-top: 0; }
+  table.grid td { border-left: 0; border-top: 0; padding: 4px 12px; }
+  table.grid td.lvcol { text-align: left; padding: 12px 12px 0; }
+  table.grid td[data-axis]::before { content: attr(data-axis); display: block; font-size: 12px; font-weight: 700; color: var(--navy); margin: 4px 0 2px; }
+  table.grid td.none { display: none; }
+
+  /* 採用の一覧は、名前・選考の段階・軸の段階を残して畳む。届いていない軸は赤のセルで分かり、次に聞く軸は候補者のページに出る */
+  .wide-only { display: none; }
+  .stage { padding: 1px 6px; }
+  .funnel { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .funnel li { padding: 6px 10px; border-bottom: 1px solid var(--line); }
+
+  /* デモのログインは、1人を1枚に積む。名前と役割を1行目に、見られるタブと担当する人を下に出す */
+  .demo-login table, .demo-login tbody, .demo-login tr { display: block; }
+  .demo-login thead { display: none; }
+  .demo-login tr { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 10px 8px; border-top: 1px solid var(--line); }
+  .demo-login tr:first-child { border-top: 0; }
+  .demo-login td { display: block; padding: 0; border: 0; }
+  .demo-login td:nth-child(3), .demo-login td:nth-child(4) { width: 100%; white-space: normal; font-size: 13px; }
+  .demo-login td:nth-child(4):has(> .muted) { display: none; }
+}
