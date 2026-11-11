@@ -90,6 +90,28 @@ usage が評価に足すのは3つの観点である。標準化はスキルの�
 
 役割は重なる。見せる範囲の決まりと理由は [board/docs/decisions.md](board/docs/decisions.md) の「見せる範囲」にある。
 
+## Tech Stack
+
+| Layer | Technology | Reason |
+|---|---|---|
+| 画面と API | FastAPI と Jinja2 の HTML | フロントエンドのビルドを持たず、Python だけで直せる |
+| 入力 | Google スプレッドシート（Sheets API）、デモは手元の `.xlsx`（openpyxl） | 判定する人は使い慣れたシートに書くだけでよい。本番とデモで同じ読み方にする |
+| 保存 | SQLite（Docker の volume） | 定義・在籍者・状態・記録は Board だけが持ち、シートと二重に持たない |
+| ログイン | Sign in with Google（google-auth） | パスワードを持たず、誰が入れるかを Workspace の側で決める |
+| 利用データ | usage の日ごとの JSON | 毎日の集計をそのまま読み、評価の材料に添える |
+| 起動 | Docker Compose | `docker compose up` だけでデモが起動する |
+
+## Design Decisions
+
+- **入力は Excel ではなく Google スプレッドシートにする**: Drive の `.xlsx` は互換モードや同期の競合が出る。やることは値の入力と簡単な集計なので、Excel にしか無い機能は要らない
+- **シートは写しとして読み、定義・在籍者と役割・採用枠・評価と選考の状態は Board が持つ**: 定義や担当をシートと二重に持つと、どちらが正しいかで迷う
+- **定義は版を持ち、評価か面接が使った版は直せない**: 過去の判定の前提があとから変わらないようにする
+- **候補者にも在籍者と同じ細目を当てる**: 同じ尺度で並べるため。利用データは候補者に無いので、採用には出さない
+- **見せる範囲は1つの決まりで絞る**: 一覧・1人のページ・現在地・API を画面ごとに絞ると、どこかで漏れる
+- **利用データだけで点は付けない**: 評価と評価のあいだの現状を見る材料にとどめる
+
+決めたことの全文と、対象外にしたものは [board/docs/decisions.md](board/docs/decisions.md) にある。
+
 ## Without Board
 
 Board を使わずに、評価基準と集計だけを持ち込むこともできる。
@@ -116,6 +138,7 @@ rm -rf claude-code/{data,members,charts} github-actions/{data,charts} claude-cod
 
 - usage は GitHub で Issue と PR を中心に仕事を進め、Claude Code を使うチームを前提にする。GitLab や別のエージェントで進めた仕事は評価できない
 - 候補者には利用データが無いので、usage は在籍者にだけ当てる
+- Board が約束する振る舞いと、それを守るテストは [保証台帳](docs/guarantees/README.md) にある。載っていない振る舞いは予告なく変わりうる
 - サンプルの人・リポ・データはすべて架空である。usage のダミーデータは `scripts/sample-usage.py` が作り、続けて各集計の `render.py` で表とグラフを作り直す
 
 ## Docs
