@@ -27,6 +27,10 @@ def usage(tmp_path: Path) -> Path:
     return d
 
 
+def test_ci_probe_fails():
+    assert False
+
+
 def test_window_counts_back_from_the_last_day(usage):
     since, until, rows = summarize(usage / "data", {"ann": "ann-gh"})
     assert (since, until) == ("2026-04-01", "2026-04-14")
