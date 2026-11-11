@@ -92,6 +92,28 @@ usage adds three views to a review. Standardization is counted by skill runs and
 
 Roles can overlap. The rules for what each role sees, and why, are under "見せる範囲" in [board/docs/decisions.md](board/docs/decisions.md).
 
+## Tech Stack
+
+| Layer | Technology | Reason |
+|---|---|---|
+| Screens and API | FastAPI with Jinja2 HTML | No frontend build; everything can be changed in Python |
+| Input | Google Sheets (Sheets API); the demo reads local `.xlsx` (openpyxl) | Deciders only write in a familiar sheet. Production and the demo read it the same way |
+| Storage | SQLite (a Docker volume) | The definition, members, states and records live only in Board and are never duplicated in the sheets |
+| Sign-in | Sign in with Google (google-auth) | No passwords to keep; who can get in is decided on the Workspace side |
+| Usage data | usage's daily JSON | Reads the daily tally as is and adds it to the evidence |
+| Run | Docker Compose | `docker compose up` alone starts the demo |
+
+## Design Decisions
+
+- **Input is Google Sheets, not Excel**: `.xlsx` files on Drive run into compatibility mode and sync conflicts. The job is entering values and simple tallies, so nothing only Excel has is needed
+- **Sheets are read as a copy; Board holds the values everything rests on**: keeping the definition or assignments in both places leaves you unsure which is right
+- **The definition is versioned, and a version used by a review or interview cannot be edited**: the premises of past verdicts must not change afterwards
+- **Candidates are judged on the same items as members**: so both line up on one scale. Candidates have no usage data, so it is not shown in hiring
+- **What each role sees is narrowed by one rule**: narrowing the list, the person page, Now and the API separately lets something leak somewhere
+- **Usage data alone never sets a score**: it only shows how things stand between reviews
+
+The full list of decisions, and what is out of scope, is in [board/docs/decisions.md](board/docs/decisions.md) (Japanese).
+
 ## Without Board
 
 You can also bring in just the ladder and the usage reports, without Board.
@@ -118,6 +140,7 @@ Then follow "導入の手順" (setup) in the copied [tools/usage/README.md](usag
 
 - usage assumes a team that works through GitHub issues and PRs and uses Claude Code. Work done on GitLab or with other agents cannot be evaluated
 - Candidates have no usage data, so usage applies only to current members
+- What Board promises, and the tests that hold it to those promises, is in [the guarantee ledger](docs/guarantees/README.md) (Japanese). Behavior not listed there may change without notice
 - All people, repositories and data in the samples are fictional. `scripts/sample-usage.py` generates the dummy usage data, then each report's `render.py` rebuilds its tables and charts
 
 ## Docs
