@@ -66,6 +66,15 @@ def test_active_time_counts_only_cli_when_recorded():
     assert out["b@example.com"]["active_seconds"] == 500
 
 
+def test_render_load_counts_only_cli_time(tmp_path: Path, monkeypatch):
+    r = _render(USAGE)
+    (tmp_path / "2026-04-01.json").write_text(json.dumps({"date": "2026-04-01", "members": {
+        "ann@example.com": {"active_seconds": 900, "active_by_type": {"cli": 300, "user": 600}},
+    }}))
+    monkeypatch.setattr(r, "DATA_DIR", tmp_path)
+    assert r.load()[0]["members"]["ann@example.com"]["active_seconds"] == 300
+
+
 def test_summary_counts_only_cli_time(usage):
     (usage / "data" / "2026-04-14.json").write_text(json.dumps({"date": "2026-04-14", "members": {
         "ann@example.com": {"active_seconds": 900, "active_by_type": {"cli": 300, "user": 600}},
