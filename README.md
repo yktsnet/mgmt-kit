@@ -20,12 +20,12 @@
 
 採用・育成・評価を決めるのは、経営や人事など、エンジニアでない人であることも多い。ところがエンジニアの仕事はリポジトリの成果物と AI の使い方に出ていて、その人たちからは読みにくい。読めないまま決めると、基準は見る人ごとにぶれ、採用・育成・評価がそれぞれ別の尺度で回る。制度の間の食い違いは、人が調整し続けることになる。
 
-そこで mgmt-kit は、判断する人の側とエンジニアリングの側をつなぐ。
+そこで mgmt-kit は、経営や人事とエンジニアの仕事をつなぐ。
 
-- **判断する人のやり方は変えない**。判定と面接の記録は使い慣れたスプレッドシートに書くだけでよい。読んで段階に直すのは Board で、Board を用意して動かすのはエンジニアリングの側である
+- **経営や人事のやり方は変えない**。判定と面接の記録は使い慣れたスプレッドシートに書くだけでよい。読んで段階に直すのは Board で、Board を用意して動かすのはエンジニアである
 - **1つの評価基準で読めるようにする**。型（標準化された開発の手順）を配って成果物の形を揃え、5軸5段階の評価基準 ladder で採用・育成・評価を判断する
 
-2つ目の評価基準は、次の5つがつながって初めて成り立つ。
+1つの評価基準は、次の5つがつながって初めて成り立つ。
 
 - **軸を決める**。何を測るかが決まると、標準化が何を揃えるべきかも決まる
 - **型を配る**。標準化された手順をチームで回すと、成果物の形が揃う
@@ -35,7 +35,7 @@
 
 評価軸だけを作ると、測る材料が出てこない。標準化だけをやると、回っているかどうかを誰も判定できない。採用だけ別の基準で回した場合は、入れた人を育てる段になって尺度が合わない。
 
-軸は型より先に決める。標準化を先にやると、揃えるものが「書式」で止まる。判定文と型の置き場は1対1で対応させ、型に無い置き場を判定文が指していたら、どちらかを直す。型を配る側は [sdlc-kit](https://github.com/yktsnet/sdlc-kit) が受け持つ。
+軸は型より先に決める。何を測るかを決めずに標準化すると、揃うのはファイルの書式だけで、評価に要る中身が成果物に出てこない。型を配る側は [sdlc-kit](https://github.com/yktsnet/sdlc-kit) が受け持つ。
 
 ## Quick Start
 
@@ -47,37 +47,40 @@ docker compose up
 
 http://localhost:8000 を開く。何も設定しなければ、`board/samples/` の架空の10人と候補者を読むデモで起動し、ログインの画面で在籍者を選んで入る。設定・評価の状態・記録は volume に置くので、`docker compose down` と `up` のあとも残る。
 
-本物の Google のアカウントでログインし、Drive のシートを読むときは、環境変数で設定する。ログイン（`BOARD_GOOGLE_CLIENT_ID`・`BOARD_ALLOWED_DOMAIN`・`BOARD_MANAGERS`・`BOARD_SESSION_KEY`）、シートの読み込み（`BOARD_SOURCE`・`BOARD_DRIVE_FOLDER_ID`・`BOARD_SERVICE_ACCOUNT_KEY`・`BOARD_SYNC_INTERVAL`）、利用データ（`BOARD_USAGE_DIR`）の3つに分かれる。値の意味と手順は [board/docs/setup.md](board/docs/setup.md) にある。
+会社などで実際に使うときは、Google のアカウントでログインし Drive のシートを読むように、環境変数で設定する。ログイン（`BOARD_GOOGLE_CLIENT_ID`・`BOARD_ALLOWED_DOMAIN`・`BOARD_MANAGERS`・`BOARD_SESSION_KEY`）、シートの読み込み（`BOARD_SOURCE`・`BOARD_DRIVE_FOLDER_ID`・`BOARD_SERVICE_ACCOUNT_KEY`・`BOARD_SYNC_INTERVAL`）、利用データ（`BOARD_USAGE_DIR`）の3つに分かれる。値の意味と手順は [board/docs/setup.md](board/docs/setup.md) に、Drive に置くシートの形は [board/docs/sheets.md](board/docs/sheets.md) にある。
 
 ## How it works
 
 ```mermaid
 flowchart TD
-    subgraph P[判断する人の側]
-        H([評価者・面接官・経営]) ==>|判定を書く| S[/スプレッドシート/]
+    Dev(["👩‍💻 エンジニア"]) ==>|型のスキルで開発| Out[/"📁 リポの成果物"/]
+    Dev -.->|使った記録| Use[/"📊 AI の利用データ"/]
+    Out -.->|commit・PR の数| Use
+    Out ==>|判定文で確かめる| Rev(["🧑‍⚖️ Reviewer"])
+    subgraph Biz["経営や人事が触るもの"]
+        Sheet[/"📝 スプレッドシート"/] -.-> Board{{"📋 Board"}}
     end
-    subgraph E[エンジニアリングの側]
-        W[/リポジトリの成果物/]
-        U[/AI の利用データ/]
-        L[(ladder の定義)]
-    end
-    W ==>|読む| H
-    S -.-> B{{Board}}
-    U -.-> B
-    L --> B
-    B -.->|段階・次の1軸| H
+    Rev ==>|判定を書く| Sheet
+    Use -.->|型を回しているか| Board
+    Board ==>|段階・次の1軸| Boss(["👔 経営・人事"])
 ```
 
-判定を書く人はエンジニアでなくてよい。採用の可否や次に上げる軸を決めるのは人で、Board は判断の材料を並べる。シートは写しとして読むだけで、定義・在籍者と役割・採用枠・評価と選考の状態は Board だけが持つ。シートの形は [board/docs/sheets.md](board/docs/sheets.md) にある。
+太線は人の操作、点線は usage と Board が自動で集めて読み込む流れである。
+
+
+型を回すと、仕事は成果物と利用データに残り、それぞれ別のことを判定する材料になる。
+
+- **成果物で段階を決める**。型が成果物の形と置き場を揃え、ladder の判定文は「リポジトリの何を開けば真偽が確かめられるか」が分かる形で書いてある。Reviewer は判定文が指す場所を開いて判定し、根拠と一緒にシートに書く。候補者には成果物が無いので、面接官は同じ判定文を面接での聞き取りに当てる
+- **利用データで、型どおりに開発しているかを見る**。usage は Claude Code の使い方（トークン量・スキル・サブエージェント）と GitHub の作業の量（commit・PR・Issue・行数）をメンバー別に毎日集め、使った量に見合った作業が Issue と PR として出ているかを見比べられるようにする。どこを見て何が足りないと判断するかは [あるべき姿](usage/tools/usage/claude-code/README.md#あるべき姿) にある
+
+経営や人事が触るのは、シートと Board の画面だけである。判定はシートに書くので、Reviewer や面接官もエンジニアでなくてよい。採用の可否や次に上げる軸を決めるのは人で、Board は判断の材料を並べる。シートは写しとして読むだけで、定義・在籍者と役割・採用枠・評価と選考の状態は Board だけが持つ。
 
 ### Inputs
 
 | 入力 | Board での使い方 | 置き場 |
 |---|---|---|
 | ladder | 5軸5段階と各セルの判定文。Board の定義の初版になり、運用しながら Board の設定で直していく | `ladder/` |
-| usage | Claude Code の利用データ。B（AI開発のワークフロー運用）の細目にスキルの回数を添え、現在地に利用状況を出す | `usage/` |
-
-usage が評価に足すのは3つの観点である。標準化はスキルの回数と名前で、作業の量は Issue・PR・commit・行数で数える。投入の量はまず絶対数を見て、足りていれば使い方の効率を見る。3つがそろった状態と、そろわない場合ごとの対処は [あるべき姿](usage/tools/usage/claude-code/README.md#あるべき姿) にある。
+| usage | Claude Code の利用データと、GitHub の作業の量。B（AI開発のワークフロー運用）の評価に型のスキルの回数を添え、現在地に利用状況を出す | `usage/` |
 
 ### Roles
 
@@ -152,6 +155,7 @@ rm -rf claude-code/{data,members,charts} github-actions/{data,charts} claude-cod
 | [ladder/docs/adapt.md](ladder/docs/adapt.md) | 自社へ持ち込むときの差し替え方 |
 | [ladder/docs/ref/sources.md](ladder/docs/ref/sources.md) | 下敷きにした公開ラダーとライセンス |
 | [ladder/README.md](ladder/README.md) | 評価基準の全体を図でつかむスライド |
+| [usage/tools/usage/claude-code/README.md](usage/tools/usage/claude-code/README.md) | Claude Code の利用状況の表と、あるべき姿 |
 | [board/README.md](board/README.md) | Board を直す人向けの入口 |
 | [training/README.md](training/README.md) | 客先常駐の社員向けAI勉強会の提案資料 |
 

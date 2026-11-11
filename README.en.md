@@ -22,12 +22,12 @@ Documents linked from this page are in Japanese unless noted.
 
 Hiring, growth and reviews are often decided by people who are not engineers, such as executives and HR. But engineers' work shows up in repository output and in how they use AI, which those people find hard to read. Decide without being able to read it, and the criteria vary with whoever is looking, and hiring, growth and reviews each run on their own scale. People end up reconciling the gaps between them forever.
 
-So mgmt-kit connects the people who decide and the engineering side.
+So mgmt-kit connects executives and HR with engineers' work.
 
-- **Leave the deciders' way of working alone.** Verdicts and interview notes only need to be written in the spreadsheets people already use. Board reads them and turns them into levels, and setting up and running Board is engineering's job
+- **Leave how executives and HR work alone.** Verdicts and interview notes only need to be written in the spreadsheets people already use. Board reads them and turns them into levels, and setting up and running Board is the engineers' job
 - **Make the work readable on one set of criteria.** Distribute workflows (standardized development procedures) so output takes the same shape, and judge hiring, growth and reviews on ladder, a five-axis, five-level set of criteria
 
-The second point, one set of criteria, only works when these five are connected.
+One set of criteria only works when these five are connected.
 
 - **Decide the axes.** Once you know what to measure, you know what standardization has to align
 - **Distribute the workflows.** When a team runs standardized procedures, its output takes the same shape
@@ -37,7 +37,7 @@ The second point, one set of criteria, only works when these five are connected.
 
 Build only the axes and there is nothing to measure. Build only the standardization and nobody can tell whether it is working. Hire on a separate standard and the scale no longer fits once you start growing the people you hired.
 
-The axes come before the workflows. Standardize first and alignment stops at format. Each verdict maps one-to-one to a place in the workflows; if a verdict points somewhere the workflows do not have, one of them is wrong. Distributing the workflows is the job of [sdlc-kit](https://github.com/yktsnet/sdlc-kit).
+The axes come before the workflows. Standardize without deciding what to measure, and only the file format gets aligned; the substance a review needs never shows up in the output. Distributing the workflows is the job of [sdlc-kit](https://github.com/yktsnet/sdlc-kit).
 
 ## Quick Start
 
@@ -49,37 +49,40 @@ docker compose up
 
 Open http://localhost:8000. With no configuration, it starts in demo mode on the ten fictional members and candidates in `board/samples/`; pick a member on the login screen. Settings, review states and records live in a volume, so they survive `docker compose down` and `up`.
 
-To sign in with real Google accounts and read sheets from Drive, configure Board with environment variables. They come in three groups: sign-in (`BOARD_GOOGLE_CLIENT_ID`, `BOARD_ALLOWED_DOMAIN`, `BOARD_MANAGERS`, `BOARD_SESSION_KEY`), reading the sheets (`BOARD_SOURCE`, `BOARD_DRIVE_FOLDER_ID`, `BOARD_SERVICE_ACCOUNT_KEY`, `BOARD_SYNC_INTERVAL`) and usage data (`BOARD_USAGE_DIR`). What each value means, and the setup steps, are in [board/docs/setup.md](board/docs/setup.md).
+To use it for real, in a company or similar, with Google sign-in and sheets read from Drive, configure Board with environment variables. They come in three groups: sign-in (`BOARD_GOOGLE_CLIENT_ID`, `BOARD_ALLOWED_DOMAIN`, `BOARD_MANAGERS`, `BOARD_SESSION_KEY`), reading the sheets (`BOARD_SOURCE`, `BOARD_DRIVE_FOLDER_ID`, `BOARD_SERVICE_ACCOUNT_KEY`, `BOARD_SYNC_INTERVAL`) and usage data (`BOARD_USAGE_DIR`). What each value means, and the setup steps, are in [board/docs/setup.md](board/docs/setup.md); the layout of the sheets on Drive is in [board/docs/sheets.md](board/docs/sheets.md).
 
 ## How it works
 
 ```mermaid
 flowchart TD
-    subgraph P[People who decide]
-        H([Reviewers, interviewers, execs]) ==>|write verdicts| S[/Spreadsheets/]
+    Dev(["👩‍💻 Engineers"]) ==>|develop with workflow skills| Out[/"📁 Repo output"/]
+    Dev -.->|usage records| Use[/"📊 AI usage data"/]
+    Out -.->|counts of commits, PRs| Use
+    Out ==>|checked against verdict texts| Rev(["🧑‍⚖️ Reviewer"])
+    subgraph Biz["What executives and HR touch"]
+        Sheet[/"📝 Spreadsheets"/] -.-> Board{{"📋 Board"}}
     end
-    subgraph E[Engineering side]
-        W[/Repository output/]
-        U[/AI usage data/]
-        L[(ladder definition)]
-    end
-    W ==>|read| H
-    S -.-> B{{Board}}
-    U -.-> B
-    L --> B
-    B -.->|levels, next axis| H
+    Rev ==>|write verdicts| Sheet
+    Use -.->|running the workflows?| Board
+    Board ==>|levels, next axis| Boss(["👔 Executives, HR"])
 ```
 
-The people who write verdicts do not need to be engineers. People decide whether to hire and which axis to raise next; Board lays out what they need to decide. Sheets are only read as a copy; the definition, members and roles, openings, and the states of reviews and hiring live only in Board. The sheet format is in [board/docs/sheets.md](board/docs/sheets.md).
+Thick lines are people's actions; dotted lines are what usage and Board collect and read automatically.
+
+
+Running the workflows leaves the work in output and in usage data, and each is evidence for a different judgment.
+
+- **Output sets the level.** The workflows align the shape and location of output, and each ladder verdict text is written so it says what to open in the repository to check whether it holds. Reviewers open the place a verdict points to, judge it, and write the verdict with its evidence in the sheet. Candidates have no output, so interviewers apply the same verdict texts to what they hear in interviews
+- **Usage data shows whether people develop the way the workflows prescribe.** usage collects, per member and every day, how Claude Code is used (tokens, skills, subagents) and the amount of work on GitHub (commits, PRs, issues, lines), so you can compare whether work matching the amount used comes out as issues and PRs. What to look at and how to tell what is missing is in [the target state](usage/tools/usage/claude-code/README.md#あるべき姿)
+
+Executives and HR only touch the sheets and Board's screens. Verdicts are written in the sheets, so reviewers and interviewers do not need to be engineers either. People decide whether to hire and which axis to raise next; Board lays out what they need to decide. Sheets are only read as a copy; the definition, members and roles, openings, and the states of reviews and hiring live only in Board.
 
 ### Inputs
 
 | Input | How Board uses it | Location |
 |---|---|---|
 | ladder | Five axes, five levels and a verdict text for each cell. It becomes the first version of Board's definition, which is then refined in Board's settings | `ladder/` |
-| usage | Claude Code usage data. Adds skill counts to the items of axis B (running AI development workflows) and shows usage on the Now tab | `usage/` |
-
-usage adds three views to a review. Standardization is counted by skill runs and names, and the amount of work by issues, PRs, commits and lines. For the amount of input, look at the absolute amount first, and at how efficiently it is used once there is enough. What it looks like when all three are in place, and what to do for each way it breaks down, is in [the target state](usage/tools/usage/claude-code/README.md#あるべき姿).
+| usage | Claude Code usage data and the amount of work on GitHub. Adds counts of the workflow skills to the review of axis B (running AI development workflows) and shows usage on the Now tab | `usage/` |
 
 ### Roles
 
@@ -154,6 +157,7 @@ Then follow "導入の手順" (setup) in the copied [tools/usage/README.md](usag
 | [ladder/docs/adapt.md](ladder/docs/adapt.md) | What to replace when bringing it into your company |
 | [ladder/docs/ref/sources.md](ladder/docs/ref/sources.md) | The public ladders it builds on, and their licenses |
 | [ladder/README.md](ladder/README.md) | Slides that give the whole ladder at a glance |
+| [usage/tools/usage/claude-code/README.md](usage/tools/usage/claude-code/README.md) | The Claude Code usage tables, and the target state |
 | [board/README.md](board/README.md) | Entry point for people changing Board |
 | [training/README.md](training/README.md) | A proposal for AI study sessions for engineers placed at client sites |
 
