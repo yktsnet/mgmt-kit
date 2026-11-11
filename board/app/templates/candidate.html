@@ -48,7 +48,7 @@
     <thead><tr><th class="lvcol"></th>{% for a in AXES %}<th>{{ a }}<span class="name">{{ AXIS_NAMES[a] }}</span></th>{% endfor %}</tr></thead>
     <tbody>{% for lv in (5, 4, 3, 2) %}
       <tr><td class="lvcol"><span class="lv">L{{ lv }}</span></td>
-      {% for a in AXES %}<td>
+      {% for a in AXES %}<td data-axis="{{ a }} {{ AXIS_NAMES[a] }}"{% if not cells.get((lv, a)) %} class="none"{% endif %}>
         {% for it, v in cells.get((lv, a), []) %}<div class="item verdict {{ {'○': 'pass', '×': 'fail', '未観測': 'unobs'}.get(v.verdict) if v else 'blank' }}">
           <span class="mark">{{ v.verdict if v else '' }}</span>
           <span><span class="key">{{ it.key }}</span> {{ it.text }}{% if v %}<span class="ev"><b>面接{{ v.seq }}</b> {{ v.note }}</span>{% endif %}</span>

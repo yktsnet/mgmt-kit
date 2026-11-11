@@ -159,6 +159,11 @@ def review_detail(db: sqlite3.Connection, period: str, email: str):
     return {"person": person, "review": r, "row": row, "cells": cells, "sheet": sheet, "state": st, "edited_after": edited_after, "records": records(db, email, period)}
 
 
+def counts_skills(item) -> bool:
+    """Evidence がスキルの使用回数を指す B の細目。根拠の欄に usage のスキルの回数を添える。"""
+    return item["axis"] == "B" and "スキル" in item["evidence"] and "回数" in item["evidence"]
+
+
 # ---- 現在地
 
 

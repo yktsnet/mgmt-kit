@@ -164,3 +164,32 @@ def test_old_db_without_ladder_tables_opens(tmp_path, monkeypatch):
 @pytest.mark.parametrize("path", ["/reviews", "/now", "/hiring", "/settings"])
 def test_demo_pages_open(client, path):
     assert client.get(path).status_code == 200
+
+
+def next_rows(page: str) -> list[list[str]]:
+    part = page.split("<h2>次に上げる1軸</h2>", 1)[1].split("</table>", 1)[0].split("<tbody>", 1)[1]
+    text = lambda c: " ".join(htmllib.unescape(re.sub(r"<[^>]+>", " ", c)).split())  # noqa: E731
+    rows = []
+    for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", part, re.S):
+        # 直すための select は Edit のあいだだけ出るので、読むときの文字だけを取る
+        tr = re.sub(r'<select class="edit-only".*?</select>', "", tr, flags=re.S)
+        rows.append([text(c) for c in re.findall(r"<td[^>]*>(.*?)</td>", tr, re.S)])
+    return rows
+
+
+def test_now_sections_for_manager(client):
+    page = client.get("/now").text
+    assert re.findall(r"<h2>(.*?)</h2>", page) == ["次に上げる1軸", "日ごとのトークン量", "日ごとの commit", "量と成果", "使い方"]
+    rows = next_rows(page)
+    assert len(rows) == 10
+    assert rows[1] == ["🐘 Emma Hughes", "L3", "C ドメイン理解", "C が L2。最も低い軸", "🐊 Alice Walker （未決定）"]
+    assert "B が L1 のまま L2 に届かない人が 2 人いる" in page
+
+
+def test_now_for_member_without_reviewees(tmp_path, monkeypatch):
+    page = make(tmp_path, monkeypatch, "henry-ward").get("/now").text
+    # 自分の評価は Approved になるまで見られないので、段階も軸も出ない
+    assert next_rows(page) == [["🦔 Henry Ward", "-", "評価が出てから", "-", "-"]]
+    _, rows = html_table(page, "量と成果")
+    assert list(rows) == ["henry-ward", "平均"]
+    assert rows["henry-ward"] == md_table("量と成果")[1]["henry-ward"]

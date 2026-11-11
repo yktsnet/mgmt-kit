@@ -86,6 +86,14 @@ def team(usage_dir: Path, only: set[str] | None = None) -> dict | None:
     }
 
 
+def skills(usage_dir: Path, email: str) -> dict | None:
+    """1人のスキルの回数を、現在地の使い方の表と同じ期間・同じ数え方で出す。usage にその人がいなければ None。"""
+    t = team(usage_dir, {email})
+    if not t or not t["rows"]:
+        return None
+    return {"count": t["rows"][0]["skills"], "since": t["since"], "until": t["until"]}
+
+
 def member(usage_dir: Path, email: str) -> dict | None:
     """1人の毎日の推移の図と、日ごとの行。"""
     r = _render(usage_dir)

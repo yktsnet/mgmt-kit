@@ -1,7 +1,12 @@
+import re
 import shutil
 from pathlib import Path
 
 import pytest
+from fastapi.testclient import TestClient
+
+from app import config
+from app.main import create_app
 
 from app.hiring import current_stage, moves, records, set_stage
 from app.parse import SheetError
@@ -77,3 +82,37 @@ def test_candidate_requisition_missing_from_settings_is_listed_apart(db):
 def test_version_used_by_candidates_is_locked(db):
     db.execute("DELETE FROM reviews")
     assert version_in_use(db, 1)
+
+
+# ---- 画面の中身
+
+
+def page_rows(html: str, title: str) -> list[list[str]]:
+    """採用の一覧の、採用枠 title の区画の表の行。セルの文字だけにする。"""
+    part = html.split(f"<h2>{title}</h2>", 1)[1].split("</table>", 1)[0].split("<tbody>", 1)[1]
+    text = lambda c: " ".join(re.sub(r"<[^>]+>", " ", c).split())  # noqa: E731
+    return [[text(c) for c in re.findall(r"<td[^>]*>(.*?)</td>", tr, re.S)] for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", part, re.S)]
+
+
+def test_hiring_page_lists_candidates_per_requisition(tmp_path, monkeypatch):
+    drive = tmp_path / "drive"
+    shutil.copytree(BOARD / "samples" / "drive", drive)
+    monkeypatch.setenv("BOARD_XLSX_DIR", str(drive))
+    monkeypatch.setenv("BOARD_SYNC_INTERVAL", "0")
+    monkeypatch.setenv("BOARD_DB", ":memory:")
+    c = TestClient(create_app(config.load()))
+    c.post("/auth/demo", data={"email": "alice-walker@example.com"})
+    html = c.get("/hiring").text
+    assert re.findall(r"<h2>(.*?)</h2>", html) == ["リード", "開発"]
+    # 列は 名前・段階・面接・A〜E・届いていない・次に聞く
+    assert page_rows(html, "リード") == [
+        ["求める高さ", "", "", "L4", "L4", "·", "L3", "·", "", ""],
+        ["Ethan Shaw", "応募", "", "…", "…", "…", "…", "…", "", "面接前"],
+        ["Liam Price", "最終面接", "2", "4", "4", "2", "3", "3", "-", "-"],
+    ]
+    dev = page_rows(html, "開発")
+    assert [r[:2] for r in dev[1:]] == [["Olivia Hart", "書類選考"], ["Noah Reed", "一次面接"], ["Mia Collins", "内定"], ["Sophie Lane", "不採用"]]
+    assert dev[2][3:8] == ["2", "3", "…", "2", "3"] and dev[2][8] == "A D"
+    # 狭い画面で畳む列は、面接・届いていない・次に聞くの3つだけ
+    head = html.split("<h2>リード</h2>", 1)[1].split("</thead>", 1)[0]
+    assert re.findall(r'<th class="[^"]*wide-only[^"]*">(.*?)</th>', head) == ["面接", "届いていない", "次に聞く"]
