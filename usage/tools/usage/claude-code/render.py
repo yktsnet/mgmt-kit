@@ -456,7 +456,7 @@ def member_page(email: str, days: list[dt.date], by_date: dict[dt.date, dict], l
         "",
         daily_table(days, by_date, email, login),
         "",
-        "## スキル",
+        "## スキル（probe）",
         "",
         skills_table(days, by_date, email),
         "",
