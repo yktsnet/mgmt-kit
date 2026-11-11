@@ -4,9 +4,10 @@ from pathlib import Path
 
 import pytest
 
-from app.ladder import sync_ladder
+from app.demo import DOMAIN, STAFF
 from app.store import connect
 from app.usage import WINDOW_DAYS, summarize, sync_usage
+from app.usage_report import _render, team
 
 BOARD = Path(__file__).resolve().parent.parent
 USAGE = BOARD.parent / "usage" / "tools" / "usage" / "claude-code"
@@ -47,9 +48,39 @@ def test_sync_skips_when_unchanged(usage):
     assert db.execute("SELECT cost_usd FROM usage WHERE email = 'ann@example.com'").fetchone()[0] == 16
 
 
-def test_repo_sample_joins_with_ladder_staff():
+def test_repo_sample_emails_match_demo_staff():
     db = connect(":memory:")
-    sync_ladder(BOARD / "samples" / "ladder", None, "example.com", db)
     sync_usage(USAGE, db)
-    joined = db.execute("SELECT count(*) FROM staff JOIN usage USING (email)").fetchone()[0]
-    assert joined == 10
+    assert {r[0] for r in db.execute("SELECT email FROM usage")} == {f"{n}@{DOMAIN}" for n in STAFF}
+
+
+def test_active_time_counts_only_cli_when_recorded():
+    r = _render(USAGE)
+    day = {"date": "2026-04-01", "members": {
+        "a@example.com": {"active_seconds": 900, "active_by_type": {"cli": 300, "user": 600}},
+        "b@example.com": {"active_seconds": 500},
+    }}
+    out = r.cli_time_only(day)["members"]
+    assert out["a@example.com"]["active_seconds"] == 300
+    # 種類別の記録が無い日は、合計をそのまま使う
+    assert out["b@example.com"]["active_seconds"] == 500
+
+
+def test_summary_counts_only_cli_time(usage):
+    (usage / "data" / "2026-04-14.json").write_text(json.dumps({"date": "2026-04-14", "members": {
+        "ann@example.com": {"active_seconds": 900, "active_by_type": {"cli": 300, "user": 600}},
+    }}))
+    _, _, rows = summarize(usage / "data")
+    assert rows["ann@example.com"]["active_seconds"] == 300
+
+
+def test_board_rows_count_only_cli_time(tmp_path: Path):
+    d = tmp_path / "usage" / "claude-code"
+    (d / "data").mkdir(parents=True)
+    shutil.copy(USAGE / "render.py", d / "render.py")
+    shutil.copy(USAGE.parent / "chart.py", d.parent / "chart.py")
+    (d / "data" / "2026-04-01.json").write_text(json.dumps({"date": "2026-04-01", "members": {
+        "ann@example.com": {"tokens": 200_000, "sessions": 1, "active_seconds": 900, "active_by_type": {"cli": 300, "user": 600}},
+    }}))
+    rows = team(d)["rows"]
+    assert rows[0]["minutes"] == "5分"

@@ -19,10 +19,7 @@ class Config:
     xlsx_dir: Path
     drive_folder_id: str
     service_account_key: str
-    ladder_dir: Path
-    personas: Path
     usage_dir: Path
-    email_domain: str
     db_path: str
     # 設定が空のときに、デモの在籍者と採用枠を入れる
     demo: bool
@@ -51,10 +48,7 @@ def load() -> Config:
         xlsx_dir=_path("BOARD_XLSX_DIR", BOARD / "samples" / "drive"),
         drive_folder_id=os.environ.get("BOARD_DRIVE_FOLDER_ID", ""),
         service_account_key=os.environ.get("BOARD_SERVICE_ACCOUNT_KEY", ""),
-        ladder_dir=_path("BOARD_LADDER_DIR", BOARD / "samples" / "ladder"),
-        personas=_path("BOARD_PERSONAS", REPO / "ladder" / "docs" / "personas.md"),
         usage_dir=_path("BOARD_USAGE_DIR", REPO / "usage" / "tools" / "usage" / "claude-code"),
-        email_domain=os.environ.get("BOARD_EMAIL_DOMAIN", "example.com"),
         # 設定はアプリが持つので、DB はファイルに置いて残す
         db_path=os.environ.get("BOARD_DB", str(BOARD / "data" / "board.db")),
         demo=os.environ.get("BOARD_DEMO", "1" if source == "xlsx" else "0") == "1",

@@ -55,14 +55,6 @@ CREATE TABLE IF NOT EXISTS candidate_records (
   kind TEXT NOT NULL,
   body TEXT NOT NULL
 );
--- 人と軸ごとの点。出どころ（ladder）を分けて持つ
-CREATE TABLE IF NOT EXISTS scores (
-  email TEXT NOT NULL,
-  origin TEXT NOT NULL,
-  axis TEXT NOT NULL,
-  value INTEGER NOT NULL,
-  PRIMARY KEY (email, origin, axis)
-);
 -- ここから下の設定（採用枠・定義・在籍者）はアプリが持つ。シートから作り直す写しではないので、同期では消さない
 CREATE TABLE IF NOT EXISTS requisitions (
   name TEXT PRIMARY KEY,
@@ -74,20 +66,6 @@ CREATE TABLE IF NOT EXISTS requisition_targets (
   axis TEXT NOT NULL,
   value INTEGER NOT NULL,
   PRIMARY KEY (name, axis)
-);
--- 在籍者。ladder の採点結果1ファイルにつき1人で、名前はファイル名（usage の名簿と同じ、メールの @ より前）
-CREATE TABLE IF NOT EXISTS staff (
-  email TEXT PRIMARY KEY,
-  file_id TEXT NOT NULL REFERENCES files(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  period TEXT NOT NULL,
-  level INTEGER
-);
-CREATE TABLE IF NOT EXISTS personas (
-  level INTEGER NOT NULL,
-  axis TEXT NOT NULL,
-  value INTEGER NOT NULL,
-  PRIMARY KEY (level, axis)
 );
 -- usage の直近 WINDOW_DAYS 日の合計。人が書く値ではないので、集計のたびに作り直す
 CREATE TABLE IF NOT EXISTS usage (
@@ -180,8 +158,11 @@ def connect(path: Path | str) -> sqlite3.Connection:
     if rebuild:
         db.executescript("DROP TABLE IF EXISTS interviews; DROP TABLE candidates;")
     db.executescript(SCHEMA)
-    if rebuild:
-        db.execute("DELETE FROM scores WHERE origin = 'interview'")
+    # 前の形の DB に残る、どこも読まない表と読み込みの記録を消す。記録の誤りは画面に出続けるので一緒に消す
+    db.executescript(
+        "DROP TABLE IF EXISTS scores; DROP TABLE IF EXISTS staff; DROP TABLE IF EXISTS personas;"
+        "DELETE FROM files WHERE kind IN ('scoresheet', 'personas');"
+    )
     # 前の形で作った DB に、あとから足した列を足す
     cols = {r[1] for r in db.execute("PRAGMA table_info(files)")}
     if "modified_by" not in cols:

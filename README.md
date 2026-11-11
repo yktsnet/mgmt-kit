@@ -71,7 +71,7 @@ cp -r mgmt-kit/ladder/.claude/skills/ladder-score ~/repos/target/.claude/skills/
 
 ## usage：Claude Code の利用状況
 
-Claude Code の利用データをメンバー別に毎日並べ、直近2週の費用から1人ずつ要る seat も出す。組織の GitHub Actions の分数も数える。
+Claude Code の利用データをメンバー別に毎日並べる。組織の GitHub Actions の分数も数える。
 
 サンプルは [Claude Code の利用状況](usage/tools/usage/claude-code/README.md) と [Actions の分数](usage/tools/usage/github-actions/README.md) にある。
 どちらも架空の10人と8リポのダミーデータから作った。あるべき姿の人と、崩れ方の型ごとの人が入っている。
@@ -84,7 +84,7 @@ Claude Code の利用データをメンバー別に毎日並べ、直近2週の�
 ```bash
 cp -R mgmt-kit/usage/. <管理用のリポジトリ>/
 cd <管理用のリポジトリ>/tools/usage
-rm -rf claude-code/{data,members,charts} github-actions/{data,charts} claude-code/{seats,github}.json
+rm -rf claude-code/{data,members,charts} github-actions/{data,charts} claude-code/github.json
 ```
 
 そのあとはコピーした `tools/usage/README.md` の「導入の手順」に従い、「組織に合わせて替える値」を直す。

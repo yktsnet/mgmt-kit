@@ -34,7 +34,7 @@
 2. **token を作る**（Owner）：下の「token を作る」のとおりに作り、`ORG_READ_TOKEN` に置く
 3. **メンバーに知らせる**（Owner）：集めることを承認し、メンバー全員に伝える。送信設定を配ると、各メンバーが次に Claude Code を起動したときに承認を求める画面が1回出る。説明より先にこの画面が出ないよう、配る前に知らせる
 4. **送信設定を配る**（Owner）：claude.ai の **Organization settings → Claude Code → Managed settings** に送信設定を貼って保存する。中身は [claude-code/docs/setup.md](claude-code/docs/setup.md#送信設定managed-settings) にある。送信用のキーを含むので、Issue やチャットに貼らずに Owner へ直接渡す
-5. **名簿を書く**（集計を運用する人）：`claude-code/seats.json` に各メンバーの seat の種類を、`claude-code/github.json` に GitHub アカウントを書く。書き方は [claude-code/docs/seats.md](claude-code/docs/seats.md#名簿の書き方) と [claude-code/docs/setup.md](claude-code/docs/setup.md#データの流れ) にある
+5. **名簿を書く**（集計を運用する人）：`claude-code/github.json` に各メンバーの GitHub アカウントを書く。対応表の役割は [claude-code/docs/setup.md](claude-code/docs/setup.md#データの流れ) にある
 
 メンバーへの知らせには、次の4点を入れる。
 
@@ -62,7 +62,6 @@ token は作った人に見えるリポジトリしか読めない。組織の�
 
 | 値 | 置き場 | 既定の値と根拠 |
 |---|---|---|
-| Premium の7日間の上限を費用に直した値 | `claude-code/render.py` の `PREMIUM_WEEKLY_USD` | [claude-code/docs/seats.md](claude-code/docs/seats.md#上限の置き方) の「上限の置き方」 |
 | Actions の無料枠と予算の段 | `github-actions/render.py` の `FREE_MINUTES`・`TIERS_USD` | [github-actions/docs/metrics.md](github-actions/docs/metrics.md#見込みと段) の「見込みと段」 |
 | 1日の区切りと定時実行の時刻 | 各 `collect.py` の `JST`、`.github/workflows/usage.yml` の `cron` | 日本時間 |
 

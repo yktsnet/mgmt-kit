@@ -24,11 +24,11 @@ def _render(usage_dir: Path):
     return mod
 
 
-def _days(usage_dir: Path) -> list[dict]:
+def _days(r, usage_dir: Path) -> list[dict]:
     out = []
     for p in sorted((usage_dir / "data").glob("*.json")):
         try:
-            out.append(json.loads(p.read_text(encoding="utf-8")))
+            out.append(r.cli_time_only(json.loads(p.read_text(encoding="utf-8"))))
         except json.JSONDecodeError:
             continue
     return out
@@ -40,10 +40,10 @@ def team(usage_dir: Path, only: set[str] | None = None) -> dict | None:
     only を渡すと、線と行をその人たちだけにする。平均の線は only によらず全員から出す。
     """
     r = _render(usage_dir)
-    days = _days(usage_dir)
-    if not r or not days:
+    days = _days(r, usage_dir) if r else []
+    if not days:
         return None
-    by_date, span, _ = r.period(days)
+    by_date, span = r.period(days)
     if not span:
         return None
     accounts = json.loads((usage_dir / "github.json").read_text()) if (usage_dir / "github.json").is_file() else {}
@@ -53,7 +53,6 @@ def team(usage_dir: Path, only: set[str] | None = None) -> dict | None:
     for m in members:
         u = r.usage(span, by_date, m)
         issues = r.issue_counts(span, by_date, accounts.get(r.name(m)))
-        top = sorted((u["skills"] or {}).items(), key=lambda kv: (-kv[1], kv[0]))[: r.TOP_SKILLS]
         sub, whole = u["subagent"]
         rows.append({
             "email": m,
@@ -66,8 +65,9 @@ def team(usage_dir: Path, only: set[str] | None = None) -> dict | None:
             "lines_added": u["lines_added"],
             "lines_removed": u["lines_removed"],
             "issues": issues,
+            # 使い方の表は、MD と同じく内訳の記録がある人だけを並べる
+            "detailed": bool(u["detailed_days"]),
             "skills": r.skill_total(u),
-            "top_skills": top,
             "subagent": r.ratio(sub, whole),
             "efforts": r.kinds(u["efforts"]),
             "families": r.kinds(u["families"]),
@@ -89,10 +89,10 @@ def team(usage_dir: Path, only: set[str] | None = None) -> dict | None:
 def member(usage_dir: Path, email: str) -> dict | None:
     """1人の毎日の推移の図と、日ごとの行。"""
     r = _render(usage_dir)
-    days = _days(usage_dir)
-    if not r or not days:
+    days = _days(r, usage_dir) if r else []
+    if not days:
         return None
-    by_date, span, _ = r.period(days)
+    by_date, span = r.period(days)
     if not any(email in by_date.get(d, {}).get("members", {}) for d in span):
         return None
     daily = []

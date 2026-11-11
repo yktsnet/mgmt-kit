@@ -10,7 +10,7 @@ import sqlite3
 from collections import defaultdict
 from pathlib import Path
 
-# usage が seat を決めるときと同じ幅にする
+# 日ごとの揺れをならすため、2週分を合計する
 WINDOW_DAYS = 14
 FIELDS = ("cost_usd", "active_seconds", "sessions", "commits", "pull_requests", "lines_added")
 
@@ -39,6 +39,9 @@ def summarize(data_dir: Path, github: dict[str, str] | None = None) -> tuple[str
             continue
         for email, m in d.get("members", {}).items():
             row = out[email.lower()]
+            # render.py の cli_time_only と同じく、CLI の操作時間が記録された日はそれだけで数える
+            if "cli" in m.get("active_by_type", {}):
+                m = {**m, "active_seconds": m["active_by_type"]["cli"]}
             for f in FIELDS:
                 row[f] += m.get(f, 0) or 0
             row["active_days"] += 1 if m.get("sessions") else 0

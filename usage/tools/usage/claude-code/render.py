@@ -17,26 +17,16 @@ DATA_DIR = ROOT / "data"
 CHART_DIR = ROOT / "charts"
 MEMBER_DIR = ROOT / "members"
 README = ROOT / "README.md"
-SEATS = ROOT / "seats.json"
 ACCOUNTS = ROOT / "github.json"
 MEMBER_DAYS = 28
 # 平均の線をならす幅。平日だけを並べるので、5で1週間になる
 SMOOTH_DAYS = 5
 # 平均を出す最少の人数。2人だと、平均と自分の値から相手の値が割り出せる
 AVERAGE_MIN = 3
-TOP_SKILLS = 3
-# 利用上限は7日ごとに戻るので、seat は7日ごとの費用で見る。1週だけ休んだ人を誤って下げないよう、2週のうち多い方で決める
-SEAT_WEEKS = 2
-# 2週の平日のうち使った日が2日以下（週1日以下）なら、seat が要らない
-REMOVE_MAX_DAYS = 2
-# Premium の7日間の上限を費用に直した値と、それに対する Standard の上限の割合。根拠は docs/seats.md の「上限の置き方」
-PREMIUM_WEEKLY_USD = 1500
-STANDARD_SHARE = 0.2
 EFFORTS = ["low", "medium", "high", "xhigh", "max"]
 MODEL_FAMILIES = ["opus", "sonnet", "haiku", "fable"]
 # 起動して設定を確かめただけの日を、使った日に数えない
 MIN_USED_TOKENS = 100_000
-SEAT_NAMES = {"standard": "Standard", "premium": "Premium", None: "未設定"}
 QUERY_SOURCES = {"main": "メイン", "subagent": "サブエージェント", "auxiliary": "補助"}
 WEEKDAY_NAMES = "月火水木金土日"
 
@@ -53,7 +43,15 @@ ENTRYPOINTS = {
 
 
 def load() -> list[dict]:
-    return [json.loads(p.read_text()) for p in sorted(DATA_DIR.glob("*.json"))]
+    return [cli_time_only(json.loads(p.read_text())) for p in sorted(DATA_DIR.glob("*.json"))]
+
+
+def cli_time_only(day: dict) -> dict:
+    # collect.py が人の操作時間を除く前に取った日は、合計に含んでいるので種類別の記録から出し直す
+    for v in day["members"].values():
+        if "cli" in v.get("active_by_type", {}):
+            v["active_seconds"] = v["active_by_type"]["cli"]
+    return day
 
 
 def name(email: str) -> str:
@@ -275,29 +273,6 @@ def kinds(names: list[str]) -> str:
     return f"{len(names)}（{', '.join(names)}）" if names else "0"
 
 
-def seat_weeks(by_date: dict[dt.date, dict], email: str, last: dt.date) -> list[tuple[float, int]]:
-    """直近の7日ごとの費用と、そのうち使った平日の数。上限は土日の分も数えるので、費用は土日も合わせる。"""
-    weeks = []
-    for k in range(SEAT_WEEKS):
-        days = [last - dt.timedelta(days=7 * k + i) for i in range(7)]
-        rows = [(d, by_date[d]["members"][email]) for d in days if d in by_date and email in by_date[d]["members"]]
-        weeks.append((sum(r.get("cost_usd", 0) for _, r in rows),
-                      sum(1 for d, r in rows if d.weekday() < 5 and r.get("tokens", 0) >= MIN_USED_TOKENS)))
-    return weeks
-
-
-def seat_need(weeks: list[tuple[float, int]] | None, full: bool) -> str | None:
-    """要る seat。外してよいなら "none"、Premium の上限まで使うか Standard に収めるかを本人と話すなら "either"、決められないなら None。"""
-    if not full or weeks is None or not any(used for _, used in weeks):
-        return None
-    if sum(used for _, used in weeks) <= REMOVE_MAX_DAYS:
-        return "none"
-    share = max(cost for cost, _ in weeks) / PREMIUM_WEEKLY_USD
-    if share <= STANDARD_SHARE:
-        return "standard"
-    return "either" if share <= 2 * STANDARD_SHARE else "premium"
-
-
 def skill_total(u: dict) -> str:
     return "未取得" if u["skills"] is None else f"{sum(u['skills'].values())}回"
 
@@ -358,93 +333,40 @@ def average_cells(avg: dict | None) -> dict[str, str] | None:
     }
 
 
-def standard_table(stats: dict[str, dict]) -> str:
+def amount_table(stats: dict[str, dict]) -> str:
     lines = [
-        "| メンバー | スキルの回数 | よく使ったスキル |",
-        "|---|--:|---|",
-    ]
-    for m, u in stats.items():
-        skills = u["skills"] or {}
-        whole = sum(skills.values())
-        top = sorted(skills.items(), key=lambda kv: -kv[1])[:TOP_SKILLS]
-        names = "、".join(f"`{s}` {n / whole:.0%}" for s, n in top) if whole else "-"
-        lines.append(f"| [{name(m)}](members/{name(m)}.md) | {skill_total(u)} | {names} |")
-    if a := average_cells(team_average(stats)):
-        lines.append(f"| **平均** | {a['skills']} | - |")
-    return "\n".join(lines)
-
-
-def work_table(stats: dict[str, dict]) -> str:
-    lines = [
-        "| メンバー | commit | PR | 追加した行 | 削除した行 | 立てた Issue | 閉じた Issue |",
-        "|---|--:|--:|--:|--:|--:|--:|",
+        "| メンバー | 利用時間 | トークン量 | commit | PR | 追加した行 | 削除した行 | 立てた Issue | 閉じた Issue |",
+        "|---|--:|--:|--:|--:|--:|--:|--:|--:|",
     ]
     for m, u in stats.items():
         lines.append(
-            f"| {name(m)} | {u['commits']} | {u['pull_requests']} "
+            f"| [{name(m)}](members/{name(m)}.md) | {minutes(u['active_seconds'])} "
+            f"| {compact(u['tokens'])} | {u['commits']} | {u['pull_requests']} "
             f"| {u['lines_added']} | {u['lines_removed']} "
             f"| {issue_cell(u['issues'], 0)} | {issue_cell(u['issues'], 1)} |"
         )
     if a := average_cells(team_average(stats)):
-        lines.append(f"| **平均** | {a['commits']} | {a['pull_requests']} | {a['lines_added']} | {a['lines_removed']} "
-                     f"| {a['issues_opened']} | {a['issues_closed']} |")
+        lines.append(f"| **平均** | {a['minutes']} | {a['tokens']} | {a['commits']} | {a['pull_requests']} "
+                     f"| {a['lines_added']} | {a['lines_removed']} | {a['issues_opened']} | {a['issues_closed']} |")
     return "\n".join(lines)
 
 
-def input_table(stats: dict[str, dict]) -> str:
+def usage_table(stats: dict[str, dict]) -> str:
     lines = [
-        "| メンバー | 利用時間 | トークン量 | 1会話あたりのトークン量 | サブエージェントに任せた割合 | Effort | モデル |",
-        "|---|--:|--:|--:|--:|---|---|",
+        "| メンバー | スキル | サブエージェントに任せた割合 | Effort | モデル | 1会話あたりのトークン量 |",
+        "|---|--:|--:|---|---|--:|",
     ]
     for m, u in stats.items():
-        # 内訳は後から取り始めたので、内訳の無い人は切り替えの列を空ける
-        detail = (f"{ratio(*u['subagent'])} | {kinds(u['efforts'])} | {kinds(u['families'])}"
-                  if u["detailed_days"] else "- | - | -")
+        if not u["detailed_days"]:
+            continue
         lines.append(
-            f"| {name(m)} | {minutes(u['active_seconds'])} | {compact(u['tokens'])} "
-            f"| {compact(u['tokens'] / u['sessions']) if u['sessions'] else '-'} | {detail} |"
+            f"| {name(m)} | {skill_total(u)} | {ratio(*u['subagent'])} | {kinds(u['efforts'])} "
+            f"| {kinds(u['families'])} | {compact(u['tokens'] / u['sessions']) if u['sessions'] else '-'} |"
         )
+    if len(lines) == 2:
+        return "内訳のデータがまだ無い。"
     if a := average_cells(team_average(stats)):
-        lines.append(f"| **平均** | {a['minutes']} | {a['tokens']} | {a['per_session']} | {a['subagent']} | - | - |")
-    return "\n".join(lines)
-
-
-def seat_table(by_date: dict[dt.date, dict], members: list[str], seats: dict, last: dt.date, full: bool) -> str:
-    lines = [
-        f"直近{SEAT_WEEKS}週（{last - dt.timedelta(days=7 * SEAT_WEEKS - 1)} 〜 {last}、土日を含む）を7日ずつに分け、"
-        f"割合の高い方の週で決める。",
-        "",
-        "| メンバー | いまの seat | Premium の上限に対する割合 | Standard の上限に対する割合 | 要る seat |",
-        "|---|---|--:|--:|---|",
-    ]
-    names = {"none": "要らない", "either": "Review", **SEAT_NAMES}
-    # 名簿は表と同じ名前（メールアドレスの @ より前）で引く。記録の無い名簿の人は末尾に並べる
-    by_name = {name(m): m for m in members}
-    count = {"premium": 0, "standard": 0, "either": 0, None: 0}
-    for who in [*by_name, *sorted(set(seats) - set(by_name))]:
-        weeks = seat_weeks(by_date, by_name[who], last) if who in by_name else None
-        need = seat_need(weeks, full)
-        now = seats.get(who)
-        now_name = SEAT_NAMES.get(now, now) if who in seats else "名簿に無い"
-        if need is None:
-            need_name = f"{SEAT_WEEKS}週分たまるまで決めない" if not full and weeks else "記録が届いているかを確かめる"
-        else:
-            need_name = names[need]
-        top = max(c for c, _ in weeks) / PREMIUM_WEEKLY_USD if weeks else None
-        share = "- | -" if top is None else f"{top:.0%} | {top / STANDARD_SHARE:.0%}"
-        if need != "none":
-            count[need] += 1
-        lines.append(f"| {who} | {now_name} | {share} | {need_name} |")
-    now_count = {k: sum(1 for v in seats.values() if v == k) for k in ("premium", "standard")}
-    lines += [
-        "",
-        f"要る seat の数：Premium {count['premium']}・Standard {count['standard']}・Review {count['either']}"
-        + (f"・決められない {count[None]}" if count[None] else "")
-        + f"（いまの名簿は Premium {now_count['premium']}・Standard {now_count['standard']}）",
-        "",
-        f"Premium の上限は Standard の {1 / STANDARD_SHARE:.0f} 倍である。Standard の上限の2倍以内（100% を超え 200% 以下）の人は"
-        " Review としている。",
-    ]
+        lines.append(f"| **平均** | {a['skills']} | {a['subagent']} | - | - | {a['per_session']} |")
     return "\n".join(lines)
 
 
@@ -549,17 +471,16 @@ def member_page(email: str, days: list[dt.date], by_date: dict[dt.date, dict], l
     ])
 
 
-def period(days: list[dict]) -> tuple[dict[dt.date, dict], list[dt.date], bool]:
-    """日付ごとの集計、図と表に出す平日、seat を決められるだけの日数があるか。board もこの決め方で並べる。"""
+def period(days: list[dict]) -> tuple[dict[dt.date, dict], list[dt.date]]:
+    """日付ごとの集計と、図と表に出す平日。board もこの決め方で並べる。"""
     by_date = {date_of(d): d for d in days}
     last = date_of(days[-1])
     # 送信設定が届く前の日は全員が空になる。使わなかった日と見分けられないので、期間に入れない
     first = next((date_of(d) for d in days
                   if any(v.get("tokens", 0) >= MIN_USED_TOKENS for v in d["members"].values())), last)
     start = max(first, last - dt.timedelta(days=MEMBER_DAYS - 1))
-    full = (last - first).days + 1 >= 7 * SEAT_WEEKS
     span = [start + dt.timedelta(days=i) for i in range((last - start).days + 1)]
-    return by_date, [d for d in span if d.weekday() < 5], full
+    return by_date, [d for d in span if d.weekday() < 5]
 
 
 def main() -> None:
@@ -567,13 +488,11 @@ def main() -> None:
     if not days:
         print("No data yet. Nothing to render.")
         return
-    by_date, span, full = period(days)
-    last = date_of(days[-1])
+    by_date, span = period(days)
     if not span:
         print("No weekday data yet. Nothing to render.")
         return
     members = sorted({m for d in span if d in by_date for m in by_date[d]["members"]})
-    seats = json.loads(SEATS.read_text()) if SEATS.exists() else {}
     accounts = json.loads(ACCOUNTS.read_text()) if ACCOUNTS.exists() else {}
 
     (CHART_DIR / "members").mkdir(parents=True, exist_ok=True)
@@ -599,31 +518,25 @@ def main() -> None:
         f"図の破線は全員の1人あたりの{SMOOTH_DAYS}日平均（直前{SMOOTH_DAYS}平日の移動平均）、表の「平均」は全員の1人あたりの平均である。"
         f"どちらも{AVERAGE_MIN}人に満たないときは出さない。",
         "",
-        "### 標準化されたやり方",
-        "",
-        "配られたスキルを回しているか。名前を押すと、スキルごとの回数と割合が個人のページに出る。",
-        "",
-        standard_table(stats),
-        "",
-        "### 作業の量",
-        "",
-        "どれも期間の合計である。",
-        "",
-        "![メンバー別の日ごとの commit](charts/team-commits.svg)",
-        "",
-        work_table(stats),
-        "",
-        "### 投入の量",
-        "",
-        "使う量と、使い方の列を並べる。",
+        "### 日ごとのトークン量",
         "",
         "![メンバー別の日ごとのトークン量](charts/team-daily.svg)",
         "",
-        input_table(stats),
+        "### 日ごとの commit",
         "",
-        "### seat",
+        "上のトークン量と同じ日付で並べる。トークン量が増えた時期に commit も増えているかを見比べる。",
         "",
-        seat_table(by_date, list(stats), seats, last, full),
+        "![メンバー別の日ごとの commit](charts/team-commits.svg)",
+        "",
+        "### 量と成果",
+        "",
+        "どれも期間の合計である。",
+        "",
+        amount_table(stats),
+        "",
+        "### 使い方",
+        "",
+        usage_table(stats),
     ])
     text = README.read_text()
     text = re.sub(r"(<!-- report:start -->\n).*?(<!-- report:end -->)", lambda m: m[1] + report + "\n" + m[2], text, flags=re.S)
