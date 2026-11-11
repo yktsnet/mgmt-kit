@@ -1,0 +1,45 @@
+name: docker
+
+on:
+  pull_request:
+    paths: &paths
+      - "board/Dockerfile"
+      - "board/docker-compose.yml"
+      - "board/.dockerignore"
+      - "board/requirements.txt"
+      - "board/app/**"
+      - "board/samples/**"
+      - "ladder/docs/ladder.md"
+      - "usage/tools/usage/**"
+      - ".github/workflows/docker.yml"
+  push:
+    branches: [main]
+    paths: *paths
+
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: board
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start with no settings
+        run: |
+          docker compose -p ci up -d --build
+          timeout 120 sh -c 'until curl -sf -o /dev/null localhost:8000/login; do sleep 2; done'
+      - name: Open a review through the demo login
+        run: |
+          curl -sf -c jar -o /dev/null -d email=alice-walker@example.com localhost:8000/auth/demo
+          curl -sf -b jar localhost:8000/reviews/2026-H2/emma-hughes@example.com | grep -q 'Emma Hughes'
+      - name: Settings survive recreating the container
+        run: |
+          curl -sf -b jar -H 'content-type: application/json' \
+            -d '{"email":"ben-carter@example.com","hiring":true}' localhost:8000/api/people
+          docker compose -p ci down
+          docker compose -p ci up -d
+          timeout 120 sh -c 'until curl -sf -o /dev/null localhost:8000/login; do sleep 2; done'
+          # デモの Ben Carter は Member で、Hiring は付いていない。付いていれば DB が volume に残っている
+          curl -sf localhost:8000/login | grep -A1 'Ben Carter</button>' | grep -q 'badge hiring'
+      - if: always()
+        run: docker compose -p ci down -v

@@ -173,8 +173,7 @@ def create_app(cfg: config.Config | None = None) -> FastAPI:
         email = auth.verify_google(credential, board.cfg.google_client_id, board.cfg.allowed_domain)
         if not email:
             return login_page(request, f"@{board.cfg.allowed_domain} の Google Workspace のアカウントでログインしてください")
-        if not known(email):
-            return login_page(request, f"{email} は在籍者にいません。設定の在籍者に足してもらってください")
+        cfg_settings.register(board.db, email, manager=email in board.cfg.managers)
         return signed_in(email)
 
     @app.post("/auth/demo")

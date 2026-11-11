@@ -1,0 +1,17 @@
+services:
+  board:
+    build:
+      context: .
+      additional_contexts:
+        repo: ..
+    ports:
+      - "127.0.0.1:8000:8000"
+    # 本物の Google と Drive につなぐときだけ board.env を置く。無ければデモで起動する
+    env_file:
+      - path: board.env
+        required: false
+    volumes:
+      - board-data:/data
+
+volumes:
+  board-data:

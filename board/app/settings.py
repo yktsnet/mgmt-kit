@@ -82,6 +82,17 @@ def _people_rows(db: sqlite3.Connection) -> list[sqlite3.Row]:
     return db.execute("SELECT * FROM people ORDER BY rowid").fetchall()
 
 
+def register(db: sqlite3.Connection, email: str, manager: bool) -> None:
+    """本物の Google で入った人を在籍者に載せる。初めてなら Member で載せ、manager なら Manager にする。Manager から下げはしない。"""
+    with db:
+        db.execute(
+            "INSERT INTO people (email, name, evaluator, role, hiring) VALUES (?, ?, NULL, 'member', 0) ON CONFLICT(email) DO NOTHING",
+            (email, email.split("@")[0]),
+        )
+        if manager:
+            db.execute("UPDATE people SET role = 'manager' WHERE email = ?", (email,))
+
+
 def set_person(db: sqlite3.Connection, email: str, evaluator: str | None = None, role: str | None = None, hiring: bool | None = None) -> None:
     people = _people_rows(db)
     if not any(p["email"] == email for p in people):

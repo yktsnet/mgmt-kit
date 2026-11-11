@@ -6,7 +6,7 @@
 |---|---|
 | `ladder/` | `ladder/docs/ladder.md` |
 | `usage/` | `usage/tools/usage/claude-code/README.md` |
-| `board/` | `board/README.md` |
+| `board/` | `board/docs/internals.md` |
 
 ## 作業の進め方
 
