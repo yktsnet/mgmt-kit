@@ -1,3 +1,6 @@
 __pycache__/
 board/data/
 .venv/
+board/board.env
+board/secrets/
+board/docker-compose.override.yml

@@ -14,12 +14,13 @@
 入れた人を育てる段になって尺度が合わない。3つを別々の制度として持つと、
 制度の間の食い違いを人が調整し続けることになる。
 
-型を配る側は [sdlc-kit](https://github.com/yktsnet/sdlc-kit) が受け持つ。このリポは評価基準と、成果物と記録を読む2つの道具を持つ。
+型を配る側は [sdlc-kit](https://github.com/yktsnet/sdlc-kit) が受け持つ。このリポは評価基準と、成果物と記録を読む2つの道具と、それらを1つの画面で回すアプリを持つ。
 
 | 道具 | 答える問い | 読むもの | 置き場 |
 |---|---|---|---|
 | ladder | 1人がどの段階にいて、次にどの軸を上げるか | リポジトリの成果物 | `ladder/` |
 | usage | 1人が配られた型を回し、仕事を進め、十分に使っているか | Claude Code の利用データ | `usage/` |
+| board | 評価・育成・採用を同じ定義でどう回すか | 評価と面接のスプレッドシート、Claude Code の利用データ | [`board/`](board/README.md) |
 
 ## 評価で何を見るか
 
@@ -38,7 +39,7 @@ usage は GitHub で Issue と PR を中心に仕事を進め、Claude Code を�
 
 | | 中身 |
 |---|---|
-| [ladder/docs/ladder.md](ladder/docs/ladder.md) | 正本。5軸5段階と各セルの判定文、判定に読むもの |
+| [ladder/docs/ladder.md](ladder/docs/ladder.md) | 5軸5段階と各セルの判定文、判定の材料にするもの。board では定義の正本はアプリの設定で、`ladder.md` は初版の出どころ |
 | [ladder/docs/personas.md](ladder/docs/personas.md) | 各段階の参照ペルソナ。軸の凸凹を持たせた5人 |
 | [ladder/docs/scoring.md](ladder/docs/scoring.md) | 在籍者を採点し、次に上げる軸を決めるまでの手順 |
 | [ladder/docs/hiring.md](ladder/docs/hiring.md) | 同じ軸を候補者に当てる手順。評価の材料の替え方 |

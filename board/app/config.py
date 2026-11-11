@@ -27,6 +27,8 @@ class Config:
     google_client_id: str
     allowed_domain: str
     session_key: bytes
+    # 本物の Google でログインしたときに Manager にする人。在籍者が0人で始まるので、最初の Manager をここで決める
+    managers: frozenset[str]
     # この秒数より前に読んでいれば、画面を開いたときに読み直す
     sync_interval: float
 
@@ -56,5 +58,6 @@ def load() -> Config:
         google_client_id=os.environ.get("BOARD_GOOGLE_CLIENT_ID", ""),
         allowed_domain=os.environ.get("BOARD_ALLOWED_DOMAIN", "example.com").lower(),
         session_key=_session_key(),
+        managers=frozenset(e.strip().lower() for e in os.environ.get("BOARD_MANAGERS", "").split(",") if e.strip()),
         sync_interval=float(os.environ.get("BOARD_SYNC_INTERVAL", "3" if source == "xlsx" else "60")),
     )
