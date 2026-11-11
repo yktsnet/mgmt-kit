@@ -8,6 +8,9 @@ on:
       - "ladder/docs/ladder.md"
       - "usage/tools/usage/**/*.py"
       - "usage/tools/usage/claude-code/data/**"
+      # usage.py と usage_report.py が読み、テストは README.md の表とも突き合わせる
+      - "usage/tools/usage/claude-code/github.json"
+      - "usage/tools/usage/claude-code/README.md"
       - ".github/workflows/board.yml"
   push:
     branches: [main]
