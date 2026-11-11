@@ -20,24 +20,24 @@ DOMAIN = "example.com"
 TOKENS_PER_USD = 1_600_000
 
 # README.md の「あるべき姿」と崩れ方の型が見えるように、人ごとの傾向を置く。
-# (名前, GitHub, seat, 平日1日の費用の目安, 使う日の割合, 主な Effort, 主なモデル,
+# (名前, GitHub, 平日1日の費用の目安, 使う日の割合, 主な Effort, 主なモデル,
 #  使った日1日のスキルの回数, Issue を立てる度合い, commit のうち PR になる割合)
 MEMBERS = [
     # あるべき姿：型に乗り、量も足りている
-    ("alice-walker", "alicew", "premium", 260, 0.95, ["medium", "high", "xhigh", "low"], ["opus 5.5", "sonnet 5.5", "haiku 5.5"], 2.5, 8, 0.45),
-    ("emma-hughes", "emmah", "premium", 110, 0.95, ["medium", "high", "low"], ["opus 5.5", "sonnet 5.5"], 2.0, 4, 0.4),
+    ("alice-walker", "alicew", 260, 0.95, ["medium", "high", "xhigh", "low"], ["opus 5.5", "sonnet 5.5", "haiku 5.5"], 2.5, 8, 0.45),
+    ("emma-hughes", "emmah", 110, 0.95, ["medium", "high", "low"], ["opus 5.5", "sonnet 5.5"], 2.0, 4, 0.4),
     # 量は多いが型に乗っていない
-    ("ben-carter", "bencarter", "premium", 240, 0.95, ["high"], ["opus 5.5"], 0.3, 0, 0.02),
-    ("henry-ward", None, "premium", 150, 0.9, ["high", "medium"], ["opus 5.5", "sonnet 5.5"], 0.5, 0, 0.1),
-    ("chloe-evans", "chloe-e", "premium", 95, 0.9, ["high"], ["opus 5.5"], 0.3, 1, 0.1),
-    ("felix-grant", "fgrant", "premium", 90, 0.9, ["medium"], ["opus 5.5"], 0.15, 0, 0.05),
+    ("ben-carter", "bencarter", 240, 0.95, ["high"], ["opus 5.5"], 0.3, 0, 0.02),
+    ("henry-ward", None, 150, 0.9, ["high", "medium"], ["opus 5.5", "sonnet 5.5"], 0.5, 0, 0.1),
+    ("chloe-evans", "chloe-e", 95, 0.9, ["high"], ["opus 5.5"], 0.3, 1, 0.1),
+    ("felix-grant", "fgrant", 90, 0.9, ["medium"], ["opus 5.5"], 0.15, 0, 0.05),
     # 中ほど
-    ("daniel-brooks", "dbrooks", "premium", 80, 0.9, ["medium", "high"], ["opus 5.5", "haiku 4.5"], 1.0, 2, 0.3),
+    ("daniel-brooks", "dbrooks", 80, 0.9, ["medium", "high"], ["opus 5.5", "haiku 4.5"], 1.0, 2, 0.3),
     # 型に乗っているが量が少ない
-    ("grace-turner", "gturner", "standard", 25, 0.85, ["medium", "high"], ["opus 5.5", "sonnet 5.5"], 1.5, 3, 0.4),
-    ("isla-morgan", "islam", "standard", 15, 0.75, ["low", "medium"], ["sonnet 5.5"], 1.2, 2, 0.4),
+    ("grace-turner", "gturner", 25, 0.85, ["medium", "high"], ["opus 5.5", "sonnet 5.5"], 1.5, 3, 0.4),
+    ("isla-morgan", "islam", 15, 0.75, ["low", "medium"], ["sonnet 5.5"], 1.2, 2, 0.4),
     # どちらも少ない
-    ("jack-foster", "jfoster", "standard", 25, 0.1, ["medium"], ["opus 5.5"], 0.0, 0, 0.1),
+    ("jack-foster", "jfoster", 25, 0.1, ["medium"], ["opus 5.5"], 0.0, 0, 0.1),
 ]
 # 人ごとの (サブエージェントに任せる割合, 1会話あたりの費用)。会話を長く続ける人ほど1会話の費用が大きい
 STYLE = {
@@ -45,10 +45,8 @@ STYLE = {
     "emma-hughes": (0.3, 5), "felix-grant": (0.05, 18), "grace-turner": (0.2, 3), "henry-ward": (0.3, 8),
     "isla-morgan": (0.15, 2), "jack-foster": (0.2, 4),
 }
-# 週に1日しか使わず、seat が要らないと出る人
+# 週に1日しか使わない人
 RARE = "jack-foster"
-# 名簿にあるが記録が届いていない人
-SILENT = ("kate-hill", "premium")
 # sdlc-kit の flow-team と doc-style などのスキルを、使われる重みで持つ
 SKILLS = {"issue-work": 5, "issue-draft": 2, "rework-review": 2, "jp-writing": 1, "md-writing": 1,
           "daily-report": 1, "guarantee-audit": 0.5, "grasp": 0.3}
@@ -84,7 +82,7 @@ def weekdays(first: dt.date, last: dt.date) -> list[dt.date]:
 
 
 def member_day(rng: random.Random, m: tuple, d: dt.date) -> dict | None:
-    name, _, _, usd, rate, efforts, models, skill_rate, _, pr_ratio = m
+    name, _, usd, rate, efforts, models, skill_rate, _, pr_ratio = m
     if (d.weekday() != 0) if name == RARE else rng.random() > rate:
         return None
     sub_share, usd_per_session = STYLE[name]
@@ -137,7 +135,7 @@ def claude_code(rng: random.Random) -> None:
             row = member_day(rng, m, d)
             if row:
                 members[f"{m[0]}@{DOMAIN}"] = row
-            login, issue_rate = m[1], m[8]
+            login, issue_rate = m[1], m[7]
             if login and issue_rate:
                 opened = rng.randint(0, issue_rate)
                 closed = rng.randint(0, opened + 1)
@@ -145,9 +143,6 @@ def claude_code(rng: random.Random) -> None:
                     issues[login] = {"opened": opened, "closed": closed}
         day = {"date": d.isoformat(), "members": dict(sorted(members.items())), "issues": dict(sorted(issues.items()))}
         (data / f"{d}.json").write_text(json.dumps(day, ensure_ascii=False, indent=2) + "\n")
-    seats = {m[0]: m[2] for m in MEMBERS}
-    seats[SILENT[0]] = SILENT[1]
-    (CC / "seats.json").write_text(json.dumps(seats, indent=2) + "\n")
     (CC / "github.json").write_text(json.dumps({m[0]: m[1] for m in MEMBERS if m[1]}, indent=2) + "\n")
 
 

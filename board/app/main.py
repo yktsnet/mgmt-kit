@@ -13,7 +13,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from . import access, auth, config, hiring, settings as cfg_settings, usage_report, views, workflow
-from .ladder import sync_ladder
 from .parse import AXES, SheetError
 from .sources.xlsx_folder import XlsxFolderSource
 from .store import connect
@@ -51,7 +50,6 @@ class Board:
                 return
             try:
                 sync(self.source, self.db)
-                sync_ladder(self.cfg.ladder_dir, self.cfg.personas, self.cfg.email_domain, self.db)
                 sync_usage(self.cfg.usage_dir, self.db)
             except Exception:
                 # 読み込み口が一時的に落ちても、前に読めた値で画面を出す

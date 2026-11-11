@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""board のシートのテンプレートと、架空の候補者・評価・採点結果のダミーを作り直す。設定（在籍者・採用枠・定義）はアプリが持つので、ここでは作らない。"""
+"""board のシートのテンプレートと、架空の候補者・評価のダミーを作り直す。設定（在籍者・採用枠・定義）はアプリが持つので、ここでは作らない。"""
 
 import datetime as dt
 import shutil
@@ -16,8 +16,6 @@ LADDER_MD = BOARD.parent / "ladder" / "docs" / "ladder.md"
 from app.demo import EVALUATORS  # noqa: E402
 TEMPLATES = BOARD / "templates"
 DRIVE = BOARD / "samples" / "drive"
-LADDER = BOARD / "samples" / "ladder"
-PERIOD = "2026-01〜2026-03"
 AXES = ["A", "B", "C", "D", "E"]
 DOMAIN = "example.com"
 
@@ -47,7 +45,7 @@ CANDIDATES = [
 ]
 
 
-# 在籍者の採点結果。名前は usage のダミーの名簿と同じにして、usage と突き合わせられるようにする。
+# 在籍者の評価の段階。名前は usage のダミーの名簿と同じにして、usage と突き合わせられるようにする。
 # usage の README の「あるべき姿」と崩れ方の型に合わせ、型に乗っていない人は B を低くする。None は未観測
 STAFF = [
     ("alice-walker", [4, 4, 3, 4, 3]),
@@ -61,24 +59,6 @@ STAFF = [
     ("isla-morgan", [2, 2, None, 2, 1]),
     ("jack-foster", [1, 1, 2, None, 1]),
 ]
-AXIS_NAMES = ["A 上流・提案", "B 型の運用", "C ドメイン", "D 検証", "E 基盤"]
-
-
-def scoresheet(name: str, scores: list) -> str:
-    cells = ["未観測" if v is None else f"L{v}" for v in scores]
-    level = min(v for v in scores[:2] if v is not None)
-    weakest = min((v, i) for i, v in enumerate(scores[:2]))[1]
-    return (
-        f"# 採点 — {name} / {PERIOD}\n\n"
-        "## 点\n\n"
-        f"| {' | '.join(AXIS_NAMES)} |\n"
-        f"|{'---|' * len(AXIS_NAMES)}\n"
-        f"| {' | '.join(cells)} |\n\n"
-        "## 段階\n\n"
-        f"**L{level}**（A と B の低いほう）\n\n"
-        "## 次に上げる1軸\n\n"
-        f"**{AXIS_NAMES[weakest]}**\n"
-    )
 
 
 def items():
@@ -178,13 +158,10 @@ def review_book(name: str, scores: list, partial: bool) -> Workbook:
 
 
 def main() -> None:
-    for d in (TEMPLATES, DRIVE, LADDER):
+    for d in (TEMPLATES, DRIVE):
         shutil.rmtree(d, ignore_errors=True)
     (DRIVE / "candidates").mkdir(parents=True)
     TEMPLATES.mkdir(parents=True)
-    LADDER.mkdir(parents=True)
-    for name, scores in STAFF:
-        (LADDER / f"{name}.md").write_text(scoresheet(name, scores), encoding="utf-8")
 
     candidate_book().save(TEMPLATES / "candidate.xlsx")
     review_book_template().save(TEMPLATES / "review.xlsx")
@@ -204,7 +181,6 @@ def main() -> None:
         }
         candidate_book(profile, interviews).save(DRIVE / "candidates" / f"{name}.xlsx")
     print(f"wrote {len(CANDIDATES)} candidates and {len(REVIEW_DONE + REVIEW_PARTIAL)} reviews to {DRIVE.relative_to(BOARD)}")
-    print(f"wrote {len(STAFF)} scoresheets to {LADDER.relative_to(BOARD)}")
 
 
 if __name__ == "__main__":

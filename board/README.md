@@ -21,7 +21,7 @@ python -m venv .venv && .venv/bin/pip install -r requirements.txt -r requirement
 
 ```text
 Drive のシート / samples/drive/*.xlsx ─(sources/)─> sync.py ─> SQLite <─ settings.py・workflow.py・hiring.py（アプリが持つ値）
-ladder の採点結果・usage の JSON ──────────────────────────────> SQLite
+usage の JSON ─────────────────────────────────────────────────> SQLite
                                                                  │
                                          views.py（画面に出す値を組み立てる）
                                                                  │
@@ -49,7 +49,6 @@ ladder の採点結果・usage の JSON ─────────────�
 | `app/definition.py` | 定義の細目と版。初版は `ladder/docs/ladder.md` から作る |
 | `app/settings.py` | 設定を直す。直す前に読むときと同じ決まりで確かめる。デモの初期値を入れる |
 | `app/people.py` | 在籍者と Reviewer の割り当ての確認 |
-| `app/ladder.py` | ladder の採点結果と参照ペルソナの読み込み |
 | `app/usage.py`・`app/usage_report.py` | usage の JSON の集計と、現在地に出す図と表。図と表は usage の `render.py` を呼ぶ |
 | `app/demo.py` | デモの在籍者・採用枠・選考の段階 |
 | `scripts/make_samples.py` | `templates/` と `samples/` を作り直す |

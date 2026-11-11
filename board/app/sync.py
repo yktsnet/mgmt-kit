@@ -35,7 +35,7 @@ def kind_of(ref: FileRef) -> str | None:
 def sync(source: Source, db: sqlite3.Connection) -> SyncResult:
     result = SyncResult()
     refs = [r for r in source.list() if kind_of(r)]
-    # ladder の採点結果も files に入るので、シートの種類だけを突き合わせる
+    # usage の JSON も files に入るので、シートの種類だけを突き合わせる
     known = {
         row["id"]: row["modified"]
         for row in db.execute(f"SELECT id, modified FROM files WHERE kind IN ({','.join('?' * len(KINDS))})", KINDS)

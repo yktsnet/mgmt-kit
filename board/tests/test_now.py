@@ -1,4 +1,7 @@
+import html as htmllib
+import re
 import shutil
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -10,6 +13,7 @@ from app.views import next_axis
 from app.review import AxisResult
 
 BOARD = Path(__file__).resolve().parent.parent
+USAGE_README = BOARD.parent / "usage" / "tools" / "usage" / "claude-code" / "README.md"
 
 
 def make(tmp_path, monkeypatch, who="alice-walker"):
@@ -43,7 +47,6 @@ def test_page_shows_md_equivalent_charts_and_tables(client):
     assert html.count("<svg") == 2
     # MD と同じく、トークン量の多い順（ダミーでは ben-carter が先頭）
     assert html.index('href="/now/ben-carter@example.com"') < html.index('href="/now/alice-walker@example.com"')
-    assert "<code>issue-draft</code>（" in html
     assert "（未決定）" in html
     assert "B が L1 のまま L2 に届かない人が 2 人いる" in html
 
@@ -95,3 +98,69 @@ def test_average_is_smoothed_and_needs_three_people():
     assert 'class="avg"' not in r.team_chart(days, by_date, ["a", "b"], "tokens", str)
     assert 'class="avg"' in r.team_chart(days, by_date, ["a"], "tokens", str, average_of=["a", "b", "c"])
     assert r.team_average({"a": {}, "b": {}}) is None
+
+
+def md_table(title: str) -> tuple[list[str], dict[str, list[str]]]:
+    """usage の README.md の見出し title の下の表を、見出しの列と、名前ごとの行にする。"""
+    text = USAGE_README.read_text(encoding="utf-8").split(f"### {title}\n", 1)[1]
+    lines = [ln for ln in text.split("\n### ", 1)[0].splitlines() if ln.startswith("|")]
+    cells = [[c.strip() for c in ln.strip("|").split("|")] for ln in lines]
+    rows = {}
+    for row in cells[2:]:
+        who = re.sub(r"\[([^]]+)\]\([^)]*\)", r"\1", row[0]).replace("**平均**", "平均")
+        rows[who] = row[1:]
+    return cells[0][1:], rows
+
+
+def html_table(page: str, title: str) -> tuple[list[str], dict[str, list[str]]]:
+    """現在地のページの見出し title の下の表を、md_table と同じ形にする。"""
+    part = page.split(f"<h2>{title}</h2>", 1)[1].split("</table>", 1)[0]
+    text = lambda c: htmllib.unescape(re.sub(r"<[^>]+>", "", c)).strip()  # noqa: E731
+    head = [text(c) for c in re.findall(r"<th[^>]*>(.*?)</th>", part, re.S)]
+    rows = {}
+    for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", part, re.S):
+        tds = [text(c) for c in re.findall(r"<td[^>]*>(.*?)</td>", tr, re.S)]
+        if tds:
+            rows[tds[0].replace("平均（全員）", "平均")] = tds[1:]
+    return head[1:], rows
+
+
+@pytest.mark.parametrize("title", ["量と成果", "使い方"])
+def test_now_tables_match_usage_readme(client, title):
+    page = client.get("/now").text
+    md_head, md_rows = md_table(title)
+    head, rows = html_table(page, title)
+    assert head == md_head
+    assert rows == md_rows and len(rows) == 11
+
+
+def test_old_db_without_ladder_tables_opens(tmp_path, monkeypatch):
+    path = tmp_path / "old.db"
+    old = sqlite3.connect(path)
+    old.executescript(
+        "CREATE TABLE files (id TEXT PRIMARY KEY, path TEXT NOT NULL, modified TEXT NOT NULL, kind TEXT NOT NULL, error TEXT, modified_by TEXT);"
+        "CREATE TABLE scores (email TEXT NOT NULL, origin TEXT NOT NULL, axis TEXT NOT NULL, value INTEGER NOT NULL);"
+        "CREATE TABLE staff (email TEXT PRIMARY KEY, file_id TEXT NOT NULL, name TEXT NOT NULL, period TEXT NOT NULL, level INTEGER);"
+        "CREATE TABLE personas (level INTEGER NOT NULL, axis TEXT NOT NULL, value INTEGER NOT NULL);"
+        "INSERT INTO files VALUES ('ladder/ben-carter.md', 'ladder/ben-carter.md', '1', 'scoresheet', 'bad sheet', NULL);"
+        "INSERT INTO staff VALUES ('ben-carter@example.com', 'ladder/ben-carter.md', 'ben-carter', '2026-01', 1);"
+    )
+    old.commit()
+    old.close()
+    monkeypatch.setenv("BOARD_DB", str(path))
+    drive = tmp_path / "drive"
+    shutil.copytree(BOARD / "samples" / "drive", drive)
+    monkeypatch.setenv("BOARD_XLSX_DIR", str(drive))
+    monkeypatch.setenv("BOARD_SYNC_INTERVAL", "0")
+    c = TestClient(create_app(config.load()))
+    c.post("/auth/demo", data={"email": "alice-walker@example.com"})
+    assert c.get("/now").status_code == 200
+    db = sqlite3.connect(path)
+    tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+    assert not tables & {"scores", "staff", "personas"}
+    assert db.execute("SELECT count(*) FROM files WHERE kind = 'scoresheet'").fetchone()[0] == 0
+
+
+@pytest.mark.parametrize("path", ["/reviews", "/now", "/hiring", "/settings"])
+def test_demo_pages_open(client, path):
+    assert client.get(path).status_code == 200

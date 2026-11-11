@@ -71,15 +71,14 @@
   <div class="head"><h2>使い方</h2></div>
   <div class="scroll">
   <table class="report wide">
-    <thead><tr><th>Member</th><th class="num">スキル</th><th>よく使ったスキル</th><th class="num">サブエージェントに任せた割合</th><th>Effort</th><th>モデル</th><th class="num">1会話あたりのトークン量</th></tr></thead>
-    <tbody>{% for u in report.rows %}<tr>
+    <thead><tr><th>Member</th><th class="num">スキル</th><th class="num">サブエージェントに任せた割合</th><th>Effort</th><th>モデル</th><th class="num">1会話あたりのトークン量</th></tr></thead>
+    <tbody>{% for u in report.rows if u.detailed %}<tr>
       <td class="nowrap"><a href="/now/{{ u.email }}">{{ u.name }}</a></td>
       <td class="num">{{ u.skills }}</td>
-      <td>{% for k, n in u.top_skills %}<code>{{ k }}</code>（{{ n }}）{% if not loop.last %}、{% endif %}{% else %}<span class="muted">-</span>{% endfor %}</td>
       <td class="num">{{ u.subagent }}</td><td>{{ u.efforts }}</td><td>{{ u.families }}</td><td class="num">{{ u.per_session }}</td>
     </tr>{% endfor %}</tbody>
     {% if report.average %}{% set a = report.average %}<tfoot><tr class="average">
-      <td>平均（全員）</td><td class="num">{{ a.skills }}</td><td class="muted">-</td><td class="num">{{ a.subagent }}</td><td class="muted">-</td><td class="muted">-</td><td class="num">{{ a.per_session }}</td>
+      <td>平均（全員）</td><td class="num">{{ a.skills }}</td><td class="num">{{ a.subagent }}</td><td class="muted">-</td><td class="muted">-</td><td class="num">{{ a.per_session }}</td>
     </tr></tfoot>{% endif %}
   </table>
   </div>
