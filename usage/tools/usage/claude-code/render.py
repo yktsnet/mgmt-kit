@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""data/ の日ごとの集計から、README.md の全体の節と、members/ の個人ごとのページを作り直す。"""
+"""PROBE data/ の日ごとの集計から、README.md の全体の節と、members/ の個人ごとのページを作り直す。"""
 
 import datetime as dt
 import json
