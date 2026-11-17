@@ -325,8 +325,8 @@ li::before{ content:""; position:absolute; left:.4mm; top:calc(.5lh - .75mm);
       <table class="eq" style="flex:1">
         <thead><tr><th style="width:14mm">Lv</th><th>セキュリティ</th></tr></thead>
         <tbody>
-          <tr><td><span class="lv out">L1</span></td><td>秘密情報をコードや設定ファイルに直書きしてコミットしようとする<div class="src"><code>units/secret-guard</code> のフックの拒否履歴</div></td></tr>
-          <tr><td><span class="lv">L2</span></td><td>秘密情報を環境変数か秘密の置き場へ分け、<code>units/secret-guard</code> のフックと gitleaks の CI に止められずに変更を通せる<div class="src">フックの拒否履歴、gitleaks の CI 結果</div></td></tr>
+          <tr><td><span class="lv out">L1</span></td><td>秘密情報をコードや設定ファイルに直書きしてコミットする<div class="src">gitleaks の CI 結果、コミット履歴</div></td></tr>
+          <tr><td><span class="lv">L2</span></td><td>秘密情報を環境変数か秘密の置き場へ分け、<code>units/secret-guard</code> のフックと gitleaks の CI に止められずに変更を通せる<div class="src">gitleaks の CI 結果</div></td></tr>
           <tr><td><span class="lv">L3</span></td><td>担当領域の入力の検証と、認証・認可の抜けをレビューで指摘できる。依存の脆弱性の警告を読み、更新か見送りかを判断して対処できる<div class="src">PR レビューの指摘、Dependabot の PR の処理</div></td></tr>
           <tr><td><span class="lv">L4</span></td><td>案件の権限設計（誰が何に触れるか）と秘密情報の管理方式を決められる。脅威を洗い出し、対策の要否を記録に残せる<div class="src">権限の設計資料、脅威の一覧</div></td></tr>
           <tr><td><span class="lv">L5</span></td><td>案件横断でセキュリティの基準と検査の仕組みを定め、他案件へ配布できる<div class="src">他案件で使われた基準と CI</div></td></tr>
