@@ -86,7 +86,7 @@ def set_next_axis(db: sqlite3.Connection, me: sqlite3.Row, email: str, period: s
     from .parse import AXES
 
     if axis not in AXES:
-        raise SheetError("軸は A〜E のどれか")
+        raise SheetError(f"軸は {'/'.join(AXES)} のどれか")
     person = db.execute("SELECT evaluator FROM people WHERE email = ?", (email,)).fetchone()
     if not person or not (me["role"] == "manager" or person["evaluator"] == me["email"]):
         raise SheetError("この操作をする権限が無い")

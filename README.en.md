@@ -13,10 +13,10 @@ Documents linked from this page are in Japanese unless noted.
 
 | | |
 |---|---|
-| **Review**<br>![One person's review page: levels on the five axes, with a verdict and evidence for each item](board/docs/screenshots/review.png) | **Now**<br>![Now: the one axis to raise next, and Claude Code usage](board/docs/screenshots/now.png) |
+| **Review**<br>![One person's review page: levels on the eight axes, with a verdict and evidence for each item](board/docs/screenshots/review.png) | **Now**<br>![Now: the one axis to raise next, and Claude Code usage](board/docs/screenshots/now.png) |
 | Levels for each axis and for the person follow from the verdicts and evidence on each item. The reviewer submits and the manager approves. Items on axis B show skill counts from Claude Code usage data | Between reviews, pick the one axis each person raises next. Claude Code usage is shown next to the team average |
-| **Hiring**<br>![Hiring list: the level each opening requires, and each candidate's level per axis](board/docs/screenshots/hiring.png) | **Settings**<br>![Settings: items and evidence for the 5×5 definition](board/docs/screenshots/settings.png) |
-| Interviews judge the same items as for current members. Axes below what the opening requires are shown in red. The selection stage advances here | Set the items and version of the 5×5 definition, each member's reviewer and roles, and the openings. A version already used by a review or interview cannot be edited; create a new version instead |
+| **Hiring**<br>![Hiring list: the level each opening requires, and each candidate's level per axis](board/docs/screenshots/hiring.png) | **Settings**<br>![Settings: items and evidence for the axis × level definition](board/docs/screenshots/settings.png) |
+| Interviews judge the same items as for current members. Axes below what the opening requires are shown in red. The selection stage advances here | Set the items and version of the axis × level definition, each member's reviewer and roles, and the openings. A version already used by a review or interview cannot be edited; create a new version instead |
 
 ## Why
 
@@ -24,7 +24,7 @@ Hiring, growth and reviews are often decided by people who are not engineers, su
 
 mgmt-kit lets executives and HR decide hiring, growth and reviews on one set of criteria, ladder, without changing how they work. Verdicts and interview notes only need to be written in spreadsheets, and the engineers set up and run Board, which turns them into levels.
 
-ladder is a table that splits what is measured into five axes and how much a person can be left to handle alone into five levels, L1 to L5. Each cell's verdict text says what to open in the repository to check whether it holds.
+ladder is a table that splits what is measured into eight axes and how much a person can be left to handle alone into five levels, L1 to L5. Each cell's verdict text says what to open in the repository to check whether it holds.
 
 If the places to open differ across the team, the verdict texts cannot be checked. So the team is given a workflow, a set of procedures for developing with AI agents, which aligns the shape and location of output. [sdlc-kit](https://github.com/yktsnet/sdlc-kit) distributes it. The workflow is built after the axes are decided: standardize without deciding what to measure, and only the file format gets aligned; the substance a review needs never shows up in the output.
 
@@ -71,7 +71,7 @@ Executives and HR only touch the sheets and Board's screens. Verdicts are writte
 
 | Input | How Board uses it | Location |
 |---|---|---|
-| ladder | Five axes, five levels and a verdict text for each cell. It becomes the first version of Board's definition, which is then refined in Board's settings | `ladder/` |
+| ladder | Eight axes, five levels and a verdict text for each cell. It becomes the first version of Board's definition, which is then refined in Board's settings | `ladder/` |
 | usage | Claude Code usage data and the amount of work on GitHub. Adds counts of the workflow skills to the review of axis B (running AI development workflows) and shows usage on the Now tab | `usage/` |
 
 ### Roles
@@ -111,7 +111,7 @@ The full list of decisions, and what is out of scope, is in [board/docs/decision
 
 You can also bring in just the ladder and the usage reports, without Board.
 
-**Scoring skill**: copy it, together with `docs/`, into the repository that holds the work of the person being scored. A score is the five axis scores, the level and the one axis to raise next, and it is not written to a file by default. Whoever decides to keep scores decides first where they go and how real names are handled.
+**Scoring skill**: copy it, together with `docs/`, into the repository that holds the work of the person being scored. A score is the eight axis scores, the level and the one axis to raise next, and it is not written to a file by default. Whoever decides to keep scores decides first where they go and how real names are handled.
 
 ```bash
 git clone https://github.com/yktsnet/mgmt-kit.git
@@ -140,7 +140,7 @@ Then follow "導入の手順" (setup) in the copied [tools/usage/README.md](usag
 
 | Document | Contents |
 |---|---|
-| [ladder/docs/ladder.md](ladder/docs/ladder.md) | Five axes, five levels, the verdict text for each cell, and what to read when judging. How the source of truth is split is in ladder/README.md |
+| [ladder/docs/ladder.md](ladder/docs/ladder.md) | Eight axes, five levels, the verdict text for each cell, and what to read when judging. How the source of truth is split is in ladder/README.md |
 | [ladder/docs/personas.md](ladder/docs/personas.md) | Reference personas for each level |
 | [ladder/docs/scoring.md](ladder/docs/scoring.md) | Scoring a member and choosing the next axis to raise |
 | [ladder/docs/hiring.md](ladder/docs/hiring.md) | Applying the same axes to candidates |

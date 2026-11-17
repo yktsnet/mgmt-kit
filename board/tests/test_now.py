@@ -60,11 +60,11 @@ def test_member_page_links_review_and_shows_trend(client):
 
 def test_reviewer_sets_next_axis_and_it_is_recorded(tmp_path, monkeypatch):
     c = make(tmp_path, monkeypatch, who="alice-walker")
-    r = c.post("/api/growth/2026-H2/ben-carter@example.com", json={"axis": "D"})
+    r = c.post("/api/growth/2026-H2/ben-carter@example.com", json={"axis": "F"})
     assert r.status_code == 200, r.text
     html = c.get("/now").text
-    assert "D 検証・品質保証" in html
-    assert "次に上げる軸を D にした" in c.get("/reviews/2026-H2/ben-carter@example.com").text
+    assert "F 検証・品質保証" in html
+    assert "次に上げる軸を F にした" in c.get("/reviews/2026-H2/ben-carter@example.com").text
 
 
 def test_others_cannot_set_next_axis(tmp_path, monkeypatch):

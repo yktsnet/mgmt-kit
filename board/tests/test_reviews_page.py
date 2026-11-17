@@ -8,9 +8,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import config
+from app.definition import from_ladder_md
 from app.main import create_app
 
 BOARD = Path(__file__).resolve().parent.parent
+# 細目の数は ladder.md の判定文の句点で決まるので、決め打ちせずに数える。L1 は判定しないので画面に出ない
+N_ITEMS = sum(x.level > 1 for x in from_ladder_md((BOARD.parent / "ladder" / "docs" / "ladder.md").read_text(encoding="utf-8")))
 
 
 @pytest.fixture
@@ -83,7 +86,7 @@ def items(html: str) -> dict[tuple[int, str, str], str]:
     out = {}
     grid = html.split('<table class="grid">', 1)[1].split("</table>", 1)[0]
     for lv, row in re.findall(r'<span class="lv">L(\d)</span></td>(.*?)</tr>', grid, re.S):
-        for axis, cell in re.findall(r'<td data-axis="([A-E]) [^"]*"[^>]*>(.*?)</td>', row, re.S):
+        for axis, cell in re.findall(r'<td data-axis="([A-H]) [^"]*"[^>]*>(.*?)</td>', row, re.S):
             for key, body in re.findall(r'<span class="key">(\w)</span>(.*?)</div>', cell, re.S):
                 out[(int(lv), axis, key)] = " ".join(re.sub(r"<[^>]+>", " ", htmllib.unescape(body)).split())
     return out
@@ -96,9 +99,9 @@ def test_reviews_roster_rows(client):
     for tr in re.findall(r"<tr>(.*?)</tr>", group.split("<tbody>", 1)[1], re.S):
         rows.append([" ".join(re.sub(r"<[^>]+>", " ", c).split()) for c in re.findall(r"<td[^>]*>(.*?)</td>", tr, re.S)])
     assert rows == [
-        ["🐘 Emma Hughes", "Ready", "", "3", "4", "2", "3", "3", "L3"],
-        ["🐻 Ben Carter", "Ready", "", "3", "1", "4", "2", "3", "L1"],
-        ["🐬 Daniel Brooks", "In progress", "11 / 33", "3", "3", "…", "…", "…", "L3"],
+        ["🐘 Emma Hughes", "Ready", "", "3", "4", "2", "3", "3", "3", "2", "3", "L3"],
+        ["🐻 Ben Carter", "Ready", "", "3", "1", "4", "3", "4", "2", "2", "3", "L1"],
+        ["🐬 Daniel Brooks", "In progress", f"11 / {N_ITEMS}", "3", "3", *["…"] * 6, "L3"],
     ]
 
 
@@ -111,7 +114,7 @@ def test_skill_usage_only_on_b_items_counting_skills(client):
         assert f"usage スキル {count}（{span}）" in got[k]
     # 段階・軸・細目の文は usage を足しても変わらない
     assert got[(2, "B", "a")].startswith("指示された手順を回し、標準の形の成果物を出せる。")
-    assert len(got) == 33
+    assert len(got) == N_ITEMS
 
 
 def test_no_skill_usage_without_usage_row(tmp_path, monkeypatch):
@@ -132,7 +135,7 @@ def test_no_skill_usage_without_usage_row(tmp_path, monkeypatch):
     html = c.get("/reviews/2026-H2/emma-hughes@example.com").text
     assert 'class="ev usage"' not in html
     got = items(html)
-    assert len(got) == 33 and "PR と Issue を読んで確かめた" in got[(2, "B", "a")]
+    assert len(got) == N_ITEMS and "PR と Issue を読んで確かめた" in got[(2, "B", "a")]
 
 
 def test_member_sees_own_skill_usage_on_approved_review(client):

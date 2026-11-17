@@ -158,7 +158,7 @@
     try {
       for (const tr of document.querySelectorAll("tr[data-req]")) {
         const val = (n) => tr.querySelector(`input[name="${n}"]`).value;
-        const target = Object.fromEntries(["A", "B", "C", "D", "E"].map((a) => [a, val(a) === "" ? null : Number(val(a))]));
+        const target = Object.fromEntries([...tr.querySelectorAll("input[data-axis]")].map((i) => i.dataset.axis).map((a) => [a, val(a) === "" ? null : Number(val(a))]));
         await post("/api/requisitions", { name: tr.dataset.req, count: Number(val("count") || 0), target });
       }
       reload("Saved");

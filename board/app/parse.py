@@ -6,7 +6,18 @@ from typing import Any
 
 from .sources import Book
 
-AXES = ("A", "B", "C", "D", "E")
+# 記号は ladder.md の軸の順に振る
+AXES = ("A", "B", "C", "D", "E", "F", "G", "H")
+AXIS_NAMES = {
+    "A": "上流・提案と関係者調整",
+    "B": "AI開発のワークフロー運用",
+    "C": "ドメイン理解",
+    "D": "設計",
+    "E": "データ",
+    "F": "検証・品質保証",
+    "G": "セキュリティ",
+    "H": "インフラ・運用",
+}
 SHEETS_EPOCH = dt.date(1899, 12, 30)
 
 

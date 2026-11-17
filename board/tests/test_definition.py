@@ -38,7 +38,7 @@ def test_versions_are_kept_apart():
 @pytest.mark.parametrize(
     "row,msg",
     [
-        (["F", "L1", "b", "x", ""], "軸"),
+        (["Z", "L1", "b", "x", ""], "軸"),
         (["A", "L6", "b", "x", ""], "段階"),
         (["A", "L1", "ab", "x", ""], "細目"),
         (["A", "L1", "a", "重なり", ""], "duplicate"),

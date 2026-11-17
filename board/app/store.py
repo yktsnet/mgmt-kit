@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS usage (
   skills INTEGER NOT NULL,
   issues_opened INTEGER NOT NULL
 );
--- 定義。版ごとに5軸×5段階の細目を持つ。前の版も消さず、前の版で付けた評価をそのまま読めるようにする
+-- 定義。版ごとに8軸×5段階の細目を持つ。前の版も消さず、前の版で付けた評価をそのまま読めるようにする
 CREATE TABLE IF NOT EXISTS definition_items (
   version INTEGER NOT NULL,
   axis TEXT NOT NULL,

@@ -34,6 +34,7 @@
 | 自分を自分の Reviewer にはできない | `test_role_and_reviewer_change`、`test_people_rules` |
 | 役割は manager と member のほかを受け付けない | `test_people_rules` |
 | 採用枠の人数を保存できる | `test_requisition_rules` |
+| 採用枠の求める高さは8軸それぞれに保存できる | `test_requisition_target_saves_every_axis` |
 | 採用枠の求める高さに、段階を超える値を受け付けない | `test_requisition_rules` |
 
 ## 初版の定義
@@ -41,7 +42,7 @@
 | 保証 | 対応テスト |
 |---|---|
 | 初版の定義は `ladder.md` から作る | `test_ladder_md_covers_every_cell` |
-| 初版の定義は25マスすべてに細目がある | `test_ladder_md_covers_every_cell` |
+| 初版の定義は40マスすべてに細目がある | `test_ladder_md_covers_every_cell` |
 | `ladder.md` の判定文は句点ごとに細目に分ける | `test_split_statement_by_period` |
 | デモでないときは在籍者0人と `ladder.md` の v1 の定義で始まる | `test_seed_builds_v1_from_ladder_md_once` |
 | 起動をくり返しても、初版の定義は増えない | `test_seed_builds_v1_from_ladder_md_once` |

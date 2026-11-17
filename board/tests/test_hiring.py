@@ -66,11 +66,11 @@ def test_offer_cannot_be_rejected_and_joined_is_final(db):
 
 def test_openings_compare_target_and_count_stages(db):
     dev = next(o for o in openings(db) if o.requisition and o.requisition["name"] == "開発")
-    assert dev.target == {"A": 3, "B": 3, "D": 3, "E": 2}
+    assert dev.target == {"A": 3, "B": 3, "E": 2, "F": 3, "G": 2, "H": 2}
     assert (dev.counts["内定"], dev.counts["一次面接"], dev.counts["不採用"]) == (1, 1, 1)
     noah = next(r for r in dev.rows if r.email == "noah-reed@example.com")
-    # A2 D2 は求める 3 に届かない。C は聞いていない
-    assert noah.short == ["A", "D"] and noah.ask == ["C"]
+    # A2 F2 は求める 3 に届かない。C は聞いていない
+    assert noah.short == ["A", "F"] and noah.ask == ["C"]
 
 
 def test_candidate_requisition_missing_from_settings_is_listed_apart(db):
@@ -104,15 +104,15 @@ def test_hiring_page_lists_candidates_per_requisition(tmp_path, monkeypatch):
     c.post("/auth/demo", data={"email": "alice-walker@example.com"})
     html = c.get("/hiring").text
     assert re.findall(r"<h2>(.*?)</h2>", html) == ["リード", "開発"]
-    # 列は 名前・段階・面接・A〜E・届いていない・次に聞く
+    # 列は 名前・段階・面接・A〜H・届いていない・次に聞く
     assert page_rows(html, "リード") == [
-        ["求める高さ", "", "", "L4", "L4", "·", "L3", "·", "", ""],
-        ["Ethan Shaw", "応募", "", "…", "…", "…", "…", "…", "", "面接前"],
-        ["Liam Price", "最終面接", "2", "4", "4", "2", "3", "3", "-", "-"],
+        ["求める高さ", "", "", "L4", "L4", "·", "L3", "·", "L3", "·", "·", "", ""],
+        ["Ethan Shaw", "応募", "", *["…"] * 8, "", "面接前"],
+        ["Liam Price", "最終面接", "2", "4", "4", "2", "4", "3", "3", "3", "3", "-", "-"],
     ]
     dev = page_rows(html, "開発")
     assert [r[:2] for r in dev[1:]] == [["Olivia Hart", "書類選考"], ["Noah Reed", "一次面接"], ["Mia Collins", "内定"], ["Sophie Lane", "不採用"]]
-    assert dev[2][3:8] == ["2", "3", "…", "2", "3"] and dev[2][8] == "A D"
+    assert dev[2][3:11] == ["2", "3", "…", "3", "3", "2", "3", "3"] and dev[2][11] == "A F"
     # 狭い画面で畳む列は、面接・届いていない・次に聞くの3つだけ
     head = html.split("<h2>リード</h2>", 1)[1].split("</thead>", 1)[0]
     assert re.findall(r'<th class="[^"]*wide-only[^"]*">(.*?)</th>', head) == ["面接", "届いていない", "次に聞く"]
