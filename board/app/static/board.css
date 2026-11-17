@@ -90,7 +90,7 @@ select:focus, input:focus, textarea:focus { outline: 2px solid var(--teal-soft);
 input[type=number] { width: 52px; text-align: center; }
 textarea { width: 100%; resize: vertical; min-height: 64px; line-height: 1.5; }
 
-/* 定義の 5×5。行が段階（上が L5）、列が軸 */
+/* 定義の軸×段階。行が段階（上が L5）、列が軸 */
 table.grid { table-layout: fixed; min-width: 960px; }
 table.grid thead th { white-space: normal; line-height: 1.4; }
 table.grid thead th .name { display: block; font-weight: 400; color: var(--muted); }
@@ -298,6 +298,12 @@ tfoot tr.average td { border-top: 2px solid var(--line); background: var(--head)
   /* 採用の一覧は、名前・選考の段階・軸の段階を残して畳む。届いていない軸は赤のセルで分かり、次に聞く軸は候補者のページに出る */
   .wide-only { display: none; }
   .stage { padding: 1px 6px; }
+  /* 8軸を名前・選考の段階と並べて390の幅に収めるため、軸の列の余白を詰める */
+  table.roster.hiring th.ax, table.roster.hiring td.ax { padding-left: 1px; padding-right: 1px; }
+  table.roster.hiring td:first-child { white-space: normal; }
+  table.roster.hiring .lv { min-width: 0; padding: 1px 3px; }
+  table.roster.hiring .lvx { min-width: 0; }
+  table.roster.hiring th:nth-child(-n+2), table.roster.hiring td:nth-child(-n+2) { padding-left: 4px; padding-right: 4px; }
   .funnel { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .funnel li { padding: 6px 10px; border-bottom: 1px solid var(--line); }
 

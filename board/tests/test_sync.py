@@ -64,8 +64,8 @@ def test_samples_load(drive, db):
 def test_latest_interview_wins_per_item(drive, db):
     seed(db, LADDER_MD, demo=False)
     sync(XlsxFolderSource(drive), db)
-    # 1回目 A4 B3 D3、2回目 B4 C2 E3。B は2回目、A と D は1回目の判定が残る
-    assert levels(db, "liam-price@example.com") == {"A": 4, "B": 4, "C": 2, "D": 3, "E": 3}
+    # 1回目 A4 B3 D4 F3、2回目 B4 C2 E3 G3 H3。B は2回目、A・D・F は1回目の判定が残る
+    assert levels(db, "liam-price@example.com") == {"A": 4, "B": 4, "C": 2, "D": 4, "E": 3, "F": 3, "G": 3, "H": 3}
 
 
 def test_axis_not_asked_is_pending_and_unobserved_is_none(drive, db):

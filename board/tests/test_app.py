@@ -182,7 +182,7 @@ def test_narrow_hiring_keeps_name_stage_and_axes_visible(server, browser):
       }).filter(Boolean)))()""")
     shown = page.evaluate("[...document.querySelector('table.roster.hiring thead tr').children].filter(th => getComputedStyle(th).display !== 'none').map(th => th.innerText)")
     ctx.close()
-    assert shown == ["Candidate", "Stage", "A", "B", "C", "D", "E"]
+    assert shown == ["Candidate", "Stage", "A", "B", "C", "D", "E", "F", "G", "H"]
     assert clipped == []
 
 

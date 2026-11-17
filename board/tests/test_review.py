@@ -89,14 +89,14 @@ def test_samples_sync_into_levels(tmp_path):
     assert sync(XlsxFolderSource(drive), db).errors == {}
     rows = {r["email"]: r["file_id"] for r in db.execute("SELECT email, file_id FROM reviews")}
     assert len(rows) == 7
-    # ben-carter は A3 B1 C4 D2 E3
+    # ben-carter は A3 B1 C4 D3 E4 F2 G2 H3
     results, judged, total = results_for(db, rows["ben-carter@example.com"])
-    assert {a: r.level for a, r in results.items()} == {"A": 3, "B": 1, "C": 4, "D": 2, "E": 3}
+    assert {a: r.level for a, r in results.items()} == {"A": 3, "B": 1, "C": 4, "D": 3, "E": 4, "F": 2, "G": 2, "H": 3}
     assert person_level(results) == 1
-    # henry-ward の D は未観測
+    # henry-ward の F は未観測
     results, _, _ = results_for(db, rows["henry-ward@example.com"])
-    assert results["D"] == AxisResult(None, False)
-    # daniel-brooks は C〜E が途中
+    assert results["F"] == AxisResult(None, False)
+    # daniel-brooks は A・B のほかが途中
     results, judged, total = results_for(db, rows["daniel-brooks@example.com"])
     assert results["C"].pending and not results["A"].pending
     assert 0 < judged < total

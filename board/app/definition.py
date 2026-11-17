@@ -1,4 +1,4 @@
-"""定義（Ladder）の細目。5軸×5段階の各マスを細目に分け、版ごとに持つ。
+"""定義（Ladder）の細目。8軸×5段階の各マスを細目に分け、版ごとに持つ。
 
 定義はアプリが持つ。parse_definition は、行の形で受けた定義を確かめるのに使う。
 """
@@ -7,7 +7,7 @@ import re
 import sqlite3
 from dataclasses import dataclass
 
-from .parse import AXES, SheetError, _table, _text
+from .parse import AXES, AXIS_NAMES, SheetError, _table, _text
 from .sources import Book
 
 LEVELS = (1, 2, 3, 4, 5)
@@ -52,7 +52,7 @@ def _version(title: str, rows: list) -> list[Item]:
             continue
         where = f"定義 {title} row {i}"
         if axis not in AXES:
-            raise SheetError(f"{where}: 軸 must be A-E, got {axis!r}")
+            raise SheetError(f"{where}: 軸 must be one of {'/'.join(AXES)}, got {axis!r}")
         if not level_text.isdigit() or int(level_text) not in LEVELS:
             raise SheetError(f"{where}: 段階 must be L1-L5, got {r.get('段階')!r}")
         if not re.fullmatch(r"[a-z]", key):
@@ -81,16 +81,16 @@ def split_statement(text: str) -> list[str]:
     return [s.strip() + "。" for s in text.split("。") if s.strip()]
 
 
+BY_NAME = {name: a for a, name in AXIS_NAMES.items()}
+
+
 def from_ladder_md(text: str) -> list[Item]:
     items = []
     axis = None
     for line in text.splitlines():
-        m = re.match(r"##\s+([A-E])\s", line)
-        if m:
-            axis = m.group(1)
-            continue
         if line.startswith("## "):
-            axis = None
+            # 判定文の節の見出しは軸名だけで書かれ、記号を持たない
+            axis = BY_NAME.get(line[3:].strip())
             continue
         m = re.match(r"\|\s*L([1-5])\s*\|(.+?)\|(.+?)\|\s*$", line)
         if axis and m:

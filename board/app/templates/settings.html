@@ -104,7 +104,7 @@
       <tr data-req="{{ r.name }}">
         <td class="nowrap">{{ r.name }}</td><td>{{ r.persona }}</td>
         <td class="num"><span class="read-only">{{ r.count }}</span><input class="edit-only" type="number" min="0" name="count" value="{{ r.count }}" aria-label="{{ r.name }} の Headcount"></td>
-        {% for t in target %}<td class="ax"><span class="read-only">{{ t if t is not none else '' }}</span><input class="edit-only" type="number" min="1" max="5" name="{{ AXES[loop.index0] }}" value="{{ t if t is not none else '' }}" aria-label="{{ r.name }} の {{ AXES[loop.index0] }}"></td>{% endfor %}
+        {% for t in target %}<td class="ax"><span class="read-only">{{ t if t is not none else '' }}</span><input class="edit-only" type="number" min="1" max="5" name="{{ AXES[loop.index0] }}" data-axis="{{ AXES[loop.index0] }}" value="{{ t if t is not none else '' }}" aria-label="{{ r.name }} の {{ AXES[loop.index0] }}"></td>{% endfor %}
       </tr>
     {% endfor %}</tbody>
   </table>

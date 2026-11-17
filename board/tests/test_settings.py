@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from app.parse import SheetError
+from app.parse import AXES, SheetError
 from app.settings import delete_item, new_version, save_item, seed, set_person, set_requisition, version_in_use
 from app.store import connect
 
@@ -60,3 +60,10 @@ def test_requisition_rules(db):
     assert db.execute("SELECT count FROM requisitions WHERE name = '開発'").fetchone()[0] == 3
     with pytest.raises(SheetError):
         set_requisition(db, "開発", 1, {"A": 9})
+
+
+def test_requisition_target_saves_every_axis(db):
+    target = {a: lv for a, lv in zip(AXES, (1, 2, 3, 4, 5, 4, 3, 2))}
+    set_requisition(db, "開発", 1, target)
+    saved = dict(db.execute("SELECT axis, value FROM requisition_targets WHERE name = '開発'").fetchall())
+    assert len(AXES) == 8 and saved == target

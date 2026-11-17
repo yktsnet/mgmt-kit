@@ -1,6 +1,6 @@
 ---
 name: ladder-score
-description: リポジトリの成果物から1人を採点し、5軸の点・段階・「次に上げる1軸」を出す。「採点して」「現在地を見たい」と言われたときに使う。判定の正本は docs/ladder.md。
+description: リポジトリの成果物から1人を採点し、8軸の点・段階・「次に上げる1軸」を出す。「採点して」「現在地を見たい」と言われたときに使う。判定の正本は docs/ladder.md。
 disable-model-invocation: true
 ---
 
@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 [docs/ladder.md](../../../docs/ladder.md) の判定文を、実際のリポジトリに当てる。
 
-出すのは5軸の点、段階、**次に上げる1軸**である。総合点と順位は出さない。平均を取ると凸凹が
+出すのは8軸の点、段階、**次に上げる1軸**である。総合点と順位は出さない。平均を取ると凸凹が
 消えて、次に何をするかが分からなくなる。
 
 **判定文を暗記や印象で当てない。** 各セルには「読むもの」が書いてある。それを開き、
@@ -32,7 +32,7 @@ gh pr list --author "<対象>" --state merged --limit 30
 対応する判定文は誰に対しても偽になる。** 人の点ではなく、型の不在として報告する。
 
 ```bash
-ls PLAN.md JUDGE.md docs/guarantees.md docs/ops/ .github/workflows/ 2>&1
+ls PLAN.md JUDGE.md docs/guarantees.md docs/ops/ .github/workflows/ .claude/hooks/no-secret-commit.sh 2>&1
 ```
 
 無い置き場があれば、[docs/adapt.md](../../../docs/adapt.md) の対応表で読み替え先を探す。
@@ -50,7 +50,7 @@ L2 の判定文から始め、真なら L3 へ進む。**偽になった手前�
 
 理由が「全体的に」「おおむね」で書けてしまうなら、まだ読んでいない。
 
-B 軸は対象者の PR の粒度と承認の残り方から読む。
+AI開発のワークフロー運用は、対象者の PR の粒度と承認の残り方を確かめる。
 
 ```bash
 gh pr view <番号> --json title,body,commits --jq '{title, body, n: (.commits|length)}'
@@ -65,8 +65,8 @@ gh pr view <番号> --json title,body,commits --jq '{title, body, n: (.commits|l
 
 ## 5. 段階を決める
 
-**A と B の低いほうを取る。** 理由は [docs/ladder.md](../../../docs/ladder.md) の「段階」にある。
-A か B が未観測なら、段階は付けずに未観測と書く。
+**上流・提案と関係者調整、AI開発のワークフロー運用のうち低いほうを取る。** 理由は [docs/ladder.md](../../../docs/ladder.md) の「段階」にある。
+どちらかが未観測なら、段階は付けずに未観測と書く。
 
 ## 6. 次に上げる1軸を決める
 

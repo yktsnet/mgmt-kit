@@ -11,10 +11,10 @@
 
 | | |
 |---|---|
-| **評価**<br>![評価の1人のページ。5軸の段階と、細目ごとの判定と根拠](board/docs/screenshots/review.png) | **現在地**<br>![現在地。次に上げる1軸と、Claude Code の利用状況](board/docs/screenshots/now.png) |
-| 細目ごとの判定と根拠から、軸の段階と本人の段階を決める。Reviewer が Submit し、Manager が Approve する。B の細目には、Claude Code の利用データにあるスキルの回数を添える | 評価と評価のあいだに、一人ずつの次に上げる1軸を決める。Claude Code の利用状況を、全員の平均と並べて見る |
-| **採用**<br>![採用の一覧。採用枠の求める高さと、候補者の軸の段階](board/docs/screenshots/hiring.png) | **設定**<br>![設定。5軸×5段階の定義の細目と Evidence](board/docs/screenshots/settings.png) |
-| 在籍者と同じ細目を面接で判定し、採用枠の求める高さに届いていない軸を赤で出す。選考の段階はここで進める | 5×5 の定義の細目と版、在籍者の Reviewer と役割、採用枠を決める。評価か面接が使った版は直せず、New version を作る |
+| **評価**<br>![評価の1人のページ。軸ごとの段階と、細目ごとの判定と根拠](board/docs/screenshots/review.png) | **現在地**<br>![現在地。次に上げる1軸と、Claude Code の利用状況](board/docs/screenshots/now.png) |
+| 細目ごとの判定と根拠から、軸の段階と本人の段階を決める。Reviewer が Submit し、Manager が Approve する。AI開発のワークフロー運用の細目には、Claude Code の利用データにあるスキルの回数を添える | 評価と評価のあいだに、一人ずつの次に上げる1軸を決める。Claude Code の利用状況を、全員の平均と並べて見る |
+| **採用**<br>![採用の一覧。採用枠の求める高さと、候補者の軸の段階](board/docs/screenshots/hiring.png) | **設定**<br>![設定。軸×段階の定義の細目と Evidence](board/docs/screenshots/settings.png) |
+| 在籍者と同じ細目を面接で判定し、採用枠の求める高さに届いていない軸を赤で出す。選考の段階はここで進める | 軸×段階の定義の細目と版、在籍者の Reviewer と役割、採用枠を決める。評価か面接が使った版は直せず、New version を作る |
 
 ## Why
 
@@ -22,7 +22,7 @@
 
 mgmt-kit は、経営や人事のやり方を変えずに、採用・育成・評価を1つの評価基準 ladder で決められるようにする。判定と面接の記録はスプレッドシートに書くだけでよく、それを段階に直す Board はエンジニアが用意して動かす。
 
-ladder は何を測るかを5つの軸に、どこまで一人で任せられるかを L1〜L5 の5段階に分けた表である。各セルの判定文は、リポジトリの何を開けば真偽を確かめられるかが分かる形で書いてある。
+ladder は何を測るかを8つの軸に、どこまで一人で任せられるかを L1〜L5 の5段階に分けた表である。各セルの判定文は、リポジトリの何を開けば真偽を確かめられるかが分かる形で書いてある。
 
 開く場所がチームで揃っていなければ、判定文では確かめられない。そこで、AI エージェントと開発を進める手順（型）を [sdlc-kit](https://github.com/yktsnet/sdlc-kit) からチームに配り、成果物の形と置き場を揃える。型は軸を決めてから作る。何を測るかを決めずに標準化すると、揃うのはファイルの書式だけで、評価に要る中身が成果物に入らない。
 
@@ -69,8 +69,8 @@ flowchart TD
 
 | 入力 | Board での使い方 | 置き場 |
 |---|---|---|
-| ladder | 5軸5段階と各セルの判定文。Board の定義の初版になり、運用しながら Board の設定で直していく | `ladder/` |
-| usage | Claude Code の利用データと、GitHub の作業の量。B（AI開発のワークフロー運用）の評価に型のスキルの回数を添え、現在地に利用状況を出す | `usage/` |
+| ladder | 8軸5段階と各セルの判定文。Board の定義の初版になり、運用しながら Board の設定で直していく | `ladder/` |
+| usage | Claude Code の利用データと、GitHub の作業の量。AI開発のワークフロー運用の評価に型のスキルの回数を添え、現在地に利用状況を出す | `usage/` |
 
 ### Roles
 
@@ -109,7 +109,7 @@ flowchart TD
 
 Board を使わずに、評価基準と集計だけを持ち込むこともできる。
 
-**採点の skill**: 採点する相手の成果物があるリポジトリへ、`docs/` ごとコピーして使う。採点結果は5軸の点・段階・次に上げる1軸で、既定でファイルに書かない。置き場と実名の扱いは、残すと決めた側が先に決める。
+**採点の skill**: 採点する相手の成果物があるリポジトリへ、`docs/` ごとコピーして使う。採点結果は8軸の点・段階・次に上げる1軸で、既定でファイルに書かない。置き場と実名の扱いは、残すと決めた側が先に決める。
 
 ```bash
 git clone https://github.com/yktsnet/mgmt-kit.git
@@ -138,7 +138,7 @@ rm -rf claude-code/{data,members,charts} github-actions/{data,charts} claude-cod
 
 | 文書 | 中身 |
 |---|---|
-| [ladder/docs/ladder.md](ladder/docs/ladder.md) | 5軸5段階と各セルの判定文、判定の材料にするもの。正本の分け方は ladder/README.md にある |
+| [ladder/docs/ladder.md](ladder/docs/ladder.md) | 8軸5段階と各セルの判定文、判定の材料にするもの。正本の分け方は ladder/README.md にある |
 | [ladder/docs/personas.md](ladder/docs/personas.md) | 各段階の参照ペルソナ |
 | [ladder/docs/scoring.md](ladder/docs/scoring.md) | 在籍者を採点し、次に上げる軸を決める手順 |
 | [ladder/docs/hiring.md](ladder/docs/hiring.md) | 同じ軸を候補者に当てる手順 |

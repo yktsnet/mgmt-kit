@@ -35,10 +35,10 @@ CANDIDATE_STAGES = {
     "sophie-lane": ["書類選考", "一次面接", "不採用"],
 }
 
-# (枠, 人数, 参照ペルソナ, A〜E)。None は求めない軸
+# (枠, 人数, 参照ペルソナ, A〜H)。None は求めない軸
 REQUISITIONS = [
-    ("リード", 1, "L4", [4, 4, None, 3, None]),
-    ("開発", 2, "L3", [3, 3, None, 3, 2]),
+    ("リード", 1, "L4", [4, 4, None, 3, None, 3, None, None]),
+    ("開発", 2, "L3", [3, 3, None, None, 2, 3, 2, 2]),
 ]
 
 

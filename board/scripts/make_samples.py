@@ -14,33 +14,33 @@ BOARD = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BOARD))
 LADDER_MD = BOARD.parent / "ladder" / "docs" / "ladder.md"
 from app.demo import EVALUATORS  # noqa: E402
+from app.parse import AXES  # noqa: E402
 TEMPLATES = BOARD / "templates"
 DRIVE = BOARD / "samples" / "drive"
-AXES = ["A", "B", "C", "D", "E"]
 DOMAIN = "example.com"
 
 PROFILE_LABELS = ["氏名", "メール", "応募枠", "版", "応募日", "経路"]
 INTERVIEWS_HEADER = ["回", "日付", "面接官", "所見"]
 # 選考の段階はアプリが持つ（app/demo.py の CANDIDATE_STAGES）。ここでは面接の量を段階に合わせる。
-# (名前, 応募枠, 応募日, 経路, [(面接日, 面接官, A〜E, 所見)])。
-# A〜E は面接で見えた段階。None はその面接で聞かなかった軸、UNOBSERVED は聞いたが材料が無かった軸
+# (名前, 応募枠, 応募日, 経路, [(面接日, 面接官, A〜H, 所見)])。
+# A〜H は面接で見えた段階。None はその面接で聞かなかった軸、UNOBSERVED は聞いたが材料が無かった軸
 UNOBSERVED = "?"
 CANDIDATES = [
     ("liam-price", "リード", "2026-03-02", "紹介", [
-        ("2026-03-12", "alice-walker", [4, 3, None, 3, None], "要件の詰め方が具体的"),
-        ("2026-03-26", "emma-hughes", [None, 4, 2, None, 3], "型を自分で直した経験がある"),
+        ("2026-03-12", "alice-walker", [4, 3, None, 4, None, 3, None, None], "要件の詰め方が具体的"),
+        ("2026-03-26", "emma-hughes", [None, 4, 2, None, 3, None, 3, 3], "型を自分で直した経験がある"),
     ]),
     ("mia-collins", "開発", "2026-02-16", "求人媒体", [
-        ("2026-02-26", "daniel-brooks", [3, 3, None, 2, 2], ""),
-        ("2026-03-09", "alice-walker", [3, 3, 2, 3, None], "検証の設計を説明できる"),
+        ("2026-02-26", "daniel-brooks", [3, 3, None, 2, None, 2, None, 2], ""),
+        ("2026-03-09", "alice-walker", [3, 3, 2, None, 3, 3, 2, None], "検証の設計を説明できる"),
     ]),
     ("noah-reed", "開発", "2026-03-20", "採用サイト", [
-        ("2026-04-02", "grace-turner", [2, 3, None, 2, 3], "基盤は強い。上流は未経験"),
+        ("2026-04-02", "grace-turner", [2, 3, None, 3, 3, 2, 3, 3], "基盤は強い。上流は未経験"),
     ]),
     ("olivia-hart", "開発", "2026-04-08", "求人媒体", []),
     ("ethan-shaw", "リード", "2026-04-15", "採用サイト", []),
     ("sophie-lane", "開発", "2026-02-02", "求人媒体", [
-        ("2026-02-12", "daniel-brooks", [1, 2, UNOBSERVED, 1, 2], "型に沿って書く経験が無い"),
+        ("2026-02-12", "daniel-brooks", [1, 2, UNOBSERVED, 1, UNOBSERVED, 1, 1, 2], "型に沿って書く経験が無い"),
     ]),
 ]
 
@@ -48,16 +48,16 @@ CANDIDATES = [
 # 在籍者の評価の段階。名前は usage のダミーの名簿と同じにして、usage と突き合わせられるようにする。
 # usage の README の「あるべき姿」と崩れ方の型に合わせ、型に乗っていない人は B を低くする。None は未観測
 STAFF = [
-    ("alice-walker", [4, 4, 3, 4, 3]),
-    ("emma-hughes", [3, 4, 2, 3, 3]),
-    ("ben-carter", [3, 1, 4, 2, 3]),
-    ("henry-ward", [2, 2, 3, None, 2]),
-    ("chloe-evans", [3, 2, 2, 2, None]),
-    ("felix-grant", [2, 1, 3, 1, 2]),
-    ("daniel-brooks", [3, 3, 2, 2, 2]),
-    ("grace-turner", [2, 3, 1, 3, 3]),
-    ("isla-morgan", [2, 2, None, 2, 1]),
-    ("jack-foster", [1, 1, 2, None, 1]),
+    ("alice-walker", [4, 4, 3, 4, 3, 4, 3, 3]),
+    ("emma-hughes", [3, 4, 2, 3, 3, 3, 2, 3]),
+    ("ben-carter", [3, 1, 4, 3, 4, 2, 2, 3]),
+    ("henry-ward", [2, 2, 3, 2, None, None, 1, 2]),
+    ("chloe-evans", [3, 2, 2, 2, 2, 2, None, None]),
+    ("felix-grant", [2, 1, 3, 2, 2, 1, 1, 2]),
+    ("daniel-brooks", [3, 3, 2, 3, 2, 2, 2, 2]),
+    ("grace-turner", [2, 3, 1, 2, 2, 3, 3, 3]),
+    ("isla-morgan", [2, 2, None, 1, 1, 2, 1, 1]),
+    ("jack-foster", [1, 1, 2, 1, None, None, 1, 1]),
 ]
 
 
@@ -86,7 +86,7 @@ def judge(row: list, s) -> None:
 def verdict_sheet(ws, scores: list | None) -> None:
     from app.review import template_rows
 
-    by_axis = dict(zip(AXES, scores or [None] * 5))
+    by_axis = dict(zip(AXES, scores or [None] * len(AXES)))
     for row in template_rows(items()):
         if row[0] in AXES:
             judge(row, by_axis[row[0]])
@@ -123,7 +123,7 @@ def candidate_book(profile: dict | None = None, interviews: list | None = None) 
 
 
 PERIOD_ID = "2026-H2"
-# 評価のダミー。STAFF の点から判定を作る。途中の人は C〜E を空欄のまま残し、未着手の人はファイルを置かない
+# 評価のダミー。STAFF の点から判定を作る。途中の人は A・B のほかを空欄のまま残し、未着手の人はファイルを置かない
 REVIEW_DONE = ["emma-hughes", "ben-carter", "chloe-evans", "grace-turner", "henry-ward"]
 REVIEW_PARTIAL = ["daniel-brooks", "felix-grant"]
 
@@ -149,10 +149,10 @@ def review_book(name: str, scores: list, partial: bool) -> Workbook:
     for row in (["メール", f"{name}@{DOMAIN}"], ["期", PERIOD_ID], ["版", "v1"], ["Reviewer", f"{ev}@{DOMAIN}" if ev else None]):
         meta.append(row)
     meta.column_dimensions["B"].width = 30
-    # 途中の人は C〜E を空欄のまま残す。未観測の軸は L2 を未観測にする
+    # 途中の人は A・B のほかを空欄のまま残す。未観測の軸は L2 を未観測にする
     marked = [UNOBSERVED if v is None else v for v in scores]
     if partial:
-        marked[2:] = [None, None, None]
+        marked[2:] = [None] * (len(AXES) - 2)
     verdict_sheet(wb.create_sheet("評価"), marked)
     return wb
 
