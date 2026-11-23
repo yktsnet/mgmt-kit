@@ -86,7 +86,7 @@ def judge(row: list, s) -> None:
 def verdict_sheet(ws, scores: list | None) -> None:
     from app.review import template_rows
 
-    by_axis = dict(zip(AXES, scores or [None] * len(AXES)))
+    by_axis = dict(zip(AXES, scores or [None] * len(AXES), strict=True))
     for row in template_rows(items()):
         if row[0] in AXES:
             judge(row, by_axis[row[0]])
@@ -94,7 +94,7 @@ def verdict_sheet(ws, scores: list | None) -> None:
     dv = DataValidation(type="list", formula1='"○,×,未観測"', allow_blank=True)
     dv.add("E2:E500")
     ws.add_data_validation(dv)
-    for col, width in zip("ABCDEF", (6, 6, 6, 64, 8, 36)):
+    for col, width in zip("ABCDEF", (6, 6, 6, 64, 8, 36), strict=True):
         ws.column_dimensions[col].width = width
 
 

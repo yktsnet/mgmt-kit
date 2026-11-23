@@ -92,7 +92,7 @@ def test_average_is_smoothed_and_needs_three_people():
     import datetime as dt
 
     days = [dt.date(2026, 4, i) for i in range(6, 11)]
-    by_date = {d: {"members": {"a": {"tokens": v}, "b": {"tokens": 0}, "c": {"tokens": 0}}} for d, v in zip(days, (30, 0, 30, 0, 30))}
+    by_date = {d: {"members": {"a": {"tokens": v}, "b": {"tokens": 0}, "c": {"tokens": 0}}} for d, v in zip(days, (30, 0, 30, 0, 30), strict=True)}
     # 日ごとの平均は 10, 0, 10, 0, 10。直前の日までと合わせてならす
     assert r.average(days, by_date, ["a", "b", "c"], "tokens") == [10, 5, 20 / 3, 5, 6]
     assert 'class="avg"' not in r.team_chart(days, by_date, ["a", "b"], "tokens", str)

@@ -1,6 +1,5 @@
 """画面に出す値を SQLite から組み立てる。HTML は知らない。"""
 
-import datetime as dt
 import sqlite3
 from dataclasses import dataclass
 
