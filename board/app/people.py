@@ -1,6 +1,5 @@
 """在籍者の名簿と、評価する担当（Reviewer）の割り当て。アプリが持ち、parse_people は行の形で受けた名簿を確かめるのに使う。"""
 
-import sqlite3
 from dataclasses import dataclass
 
 from .parse import SheetError, _sheet, _table, _text

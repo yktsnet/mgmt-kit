@@ -151,7 +151,7 @@ def seed(db: sqlite3.Connection, ladder_md: Path, demo: bool) -> None:
                 db.execute("INSERT INTO requisitions (name, count, persona) VALUES (?, ?, ?)", (name, count, persona))
                 db.executemany(
                     "INSERT INTO requisition_targets (name, axis, value) VALUES (?, ?, ?)",
-                    [(name, a, v) for a, v in zip(AXES, target) if v is not None],
+                    [(name, a, v) for a, v in zip(AXES, target, strict=True) if v is not None],
                 )
         if db.execute("SELECT 1 FROM candidate_stages LIMIT 1").fetchone() is None:
             at = "2026-04-20T09:00:00+00:00"

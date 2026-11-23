@@ -63,7 +63,7 @@ def test_requisition_rules(db):
 
 
 def test_requisition_target_saves_every_axis(db):
-    target = {a: lv for a, lv in zip(AXES, (1, 2, 3, 4, 5, 4, 3, 2))}
+    target = {a: lv for a, lv in zip(AXES, (1, 2, 3, 4, 5, 4, 3, 2), strict=True)}
     set_requisition(db, "開発", 1, target)
     saved = dict(db.execute("SELECT axis, value FROM requisition_targets WHERE name = '開発'").fetchall())
     assert len(AXES) == 8 and saved == target
